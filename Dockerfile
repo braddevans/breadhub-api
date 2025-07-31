@@ -37,8 +37,8 @@ RUN chmod +x /app/setup-git.sh /app/update_and_restart.sh && \
     touch /var/log/cron.log && \
     # Create log directory
     mkdir -p /var/log/breadhub && \
-    chown -R appuser:appuser /var/log/breadhub && \
-    chmod 755 /var/log/breadhub
+    chown -Rv appuser:appuser /var/log && \
+    chmod -Rv 777 /var/log
 
 # Setup Git configuration and start services
 USER root
