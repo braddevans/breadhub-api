@@ -50,14 +50,26 @@ def setup_flask_logging(app, level='INFO'):
     # Mark as configured
     app._logging_configured = True
 
+# Global variable to track if logging is configured
+_logging_configured = False
+
 def setup_logging(level='INFO', log_dir='/var/log/breadhub'):
     """
     Configure Loguru logging for the application with both console and file outputs.
+    This function is safe to call multiple times and will only configure logging once.
     
     Args:
         level: Logging level (e.g., 'DEBUG', 'INFO', 'WARNING', 'ERROR')
         log_dir: Directory to store log files
     """
+    global _logging_configured
+    
+    # Only configure logging once per process
+    if _logging_configured:
+        return logger
+        
+    _logging_configured = True
+    
     # Remove default handler
     logger.remove()
     
@@ -68,7 +80,8 @@ def setup_logging(level='INFO', log_dir='/var/log/breadhub'):
     log_format = (
         '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | '
         '<level>{level: <8}</level> | '
-        '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - '
+        '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | '
+        'Worker {process.identity} | '
         '<level>{message}</level>'
     )
     
@@ -79,38 +92,42 @@ def setup_logging(level='INFO', log_dir='/var/log/breadhub'):
         level=level.upper(),
         colorize=True,
         backtrace=True,
-        diagnose=True
+        diagnose=True,
+        enqueue=True  # Make thread and process safe
     )
     
-    # Add file handler with rotation
-    log_file = Path(log_dir) / 'breadhub.log'
+    # Add file handler with rotation - use a unique file per worker
+    worker_id = os.environ.get('GUNICORN_WORKER_ID', 'main')
+    log_file = Path(log_dir) / f'breadhub-{worker_id}.log'
+    
     logger.add(
         str(log_file),
-        rotation='100 MB',           # Rotate when file reaches 100MB
-        retention='30 days',         # Keep logs for 30 days
-        compression='zip',           # Compress rotated logs
-        enqueue=True,               # Thread-safe logging
-        backtrace=True,             # Include stack traces in logs
-        diagnose=True,              # Include variable values in traceback
+        rotation='100 MB',
+        retention='30 days',
+        compression='zip',
+        enqueue=True,  # Make thread and process safe
+        backtrace=True,
+        diagnose=False,  # Don't include variable values in production
         level=level.upper(),
         format=log_format,
-        colorize=False              # No color in file logs
+        colorize=False,
+        filter=lambda record: record['level'].no >= 20  # INFO and above
     )
     
-    # Add error log file with more detailed logging
+    # Add error log file for warnings and above
     error_log_file = Path(log_dir) / 'breadhub-error.log'
     logger.add(
         str(error_log_file),
-        rotation='50 MB',           # Rotate when file reaches 50MB
-        retention='90 days',        # Keep error logs longer
+        rotation='50 MB',
+        retention='90 days',
         compression='zip',
         enqueue=True,
         backtrace=True,
         diagnose=True,
-        level='WARNING',            # Only log warnings and above
+        level='WARNING',
         format=log_format,
         colorize=False
     )
     
-    logger.info(f"Logging configured. Logs will be written to {log_dir}")
+    logger.info(f"Logging configured for worker {worker_id}. Logs at {log_dir}")
     return logger

@@ -73,8 +73,8 @@ class BarcodeAPI:
             barcode_class=EAN13_GUARD,
             default_options={
                 'writer': ImageWriter(),
-                'module_width': 0.33,
-                'module_height': 15.0,
+                'module_width': 0.4,
+                'module_height': 12.0,
                 'quiet_zone': 6.5,
                 'font_size': 12,
                 'text_distance': 5.0,
