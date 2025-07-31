@@ -18,24 +18,18 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Ensure logs are persisted
       - ./logs:/var/log/breadhub
-    # Use Gunicorn in production with proper worker configuration
+    # Use Gunicorn in production with 5 workers
     command: >
-      sh -c "for i in $(seq 1 5); do
-        GUNICORN_WORKER_ID=worker-$i gunicorn \
-          --bind 0.0.0.0:5000 \
-          --worker-class sync \
-          --workers 1 \
-          --threads 2 \
-          --timeout 120 \
-          --worker-tmp-dir /dev/shm \
-          --capture-output \
-          --enable-stdio-inheritance \
-          --log-level info \
-          --access-logfile - \
-          --error-logfile - \
-          --preload \
-          wsgi:app \
-        &
-      done \
-      && wait"
+      gunicorn \
+        --bind 0.0.0.0:5000 \
+        --workers 5 \
+        --threads 5 \
+        --worker-class gthread \
+        --timeout 120 \
+        --worker-tmp-dir /dev/shm \
+        --log-level info \
+        --access-logfile - \
+        --error-logfile - \
+        --preload \
+        wsgi:app
 
