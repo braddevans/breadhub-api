@@ -44,9 +44,6 @@ RUN chmod +x /app/setup-git.sh /app/update_and_restart.sh && \
 USER root
 RUN /app/setup-git.sh && service cron start
 
-# Switch to non-root user
-USER appuser
-
 # Expose the port the app runs on
 EXPOSE 5000
 
