@@ -19,17 +19,18 @@ services:
       # Ensure logs are persisted
       - ./logs:/var/log/breadhub
     # Use Gunicorn in production with 5 workers
-    command: >
-      gunicorn \
-        --bind 0.0.0.0:5000 \
-        --workers 5 \
-        --threads 5 \
-        --worker-class gthread \
-        --timeout 120 \
-        --worker-tmp-dir /dev/shm \
-        --log-level info \
-        --access-logfile - \
-        --error-logfile - \
-        --preload \
-        wsgi:app
+    command: [
+      "gunicorn",
+      "--bind", "0.0.0.0:5000",
+      "--workers", "5",
+      "--threads", "5",
+      "--worker-class", "gthread",
+      "--timeout", "120",
+      "--worker-tmp-dir", "/dev/shm",
+      "--log-level", "info",
+      "--access-logfile", "-",
+      "--error-logfile", "-",
+      "--preload",
+      "wsgi:app"
+    ]
 
