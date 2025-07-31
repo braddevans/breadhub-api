@@ -1,0 +1,13 @@
+.venv
+.idea
+.vscode
+.DS_Store
+
+# Logs
+logs
+
+# Database
+db
+
+# Docker
+docker

@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    platform: linux/amd64  # Ensure Linux container is used on Windows
+    ports:
+      - "6400:5000"
+    volumes:
+      # For Windows, use the full path for the volume
+      - ${PWD}:/app
+      # Mount the docker.sock to allow container management from within the container
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Ensure logs are persisted
+      - ./logs:/var/log
+    environment:
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+      - PYTHONFAULTHANDLER=1
+    # Use a simple Python command that works on Windows
+    command: python -m flask run --host=0.0.0.0 --port=5000 --reload
+    
+  # Uncomment and configure this if you add a database later
+  # db:
+  #   image: postgres:13
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data/
+  #   environment:
+  #     - POSTGRES_USER=postgres
+  #     - POSTGRES_PASSWORD=postgres
+  #     - POSTGRES_DB=breadhub
+
+# Uncomment if you add a database
+# volumes:
+#   postgres_data:
