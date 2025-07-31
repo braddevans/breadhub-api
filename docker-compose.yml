@@ -7,10 +7,10 @@ services:
     ports:
       - "6400:5000"
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONFAULTHANDLER=1
-      - LOG_LEVEL=DEBUG  # Set log level to DEBUG to capture all logs
+      - LOG_LEVEL=DEBUG
     volumes:
       # For Windows, use the full path for the volume
       - ${PWD}:/app
@@ -18,10 +18,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Ensure logs are persisted
       - ./logs:/var/log/breadhub
-    environment:
-      - FLASK_ENV=development
-      - PYTHONUNBUFFERED=1
-      - PYTHONFAULTHANDLER=1
     # Use a simple Python command that works on Windows
     command: python -m flask run --host=0.0.0.0 --port=5000 --reload
 
