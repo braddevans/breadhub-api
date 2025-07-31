@@ -10,7 +10,8 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONFAULTHANDLER=1
-      - LOG_LEVEL=DEBUG
+      - LOG_LEVEL=DEBUG  # Set log level to DEBUG to capture all logs
+      - GUNICORN_WORKER_ID=worker-${HOSTNAME}
     volumes:
       # For Windows, use the full path for the volume
       - ${PWD}:/app

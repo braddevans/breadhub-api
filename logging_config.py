@@ -77,11 +77,14 @@ def setup_logging(level='INFO', log_dir='/var/log/breadhub'):
     os.makedirs(log_dir, exist_ok=True)
     
     # Standard log format
+    # Get the worker ID from environment or use process ID
+    worker_id = os.environ.get('GUNICORN_WORKER_ID', f'worker-{os.getpid()}')
+    
     log_format = (
         '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | '
         '<level>{level: <8}</level> | '
+        f'<cyan>{worker_id}</cyan> | '
         '<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | '
-        'Worker {process.identity} | '
         '<level>{message}</level>'
     )
     
