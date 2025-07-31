@@ -1,16 +1,33 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from config import Config
-from logging_config import setup_logging, logger
+from logging_config import setup_logging, setup_flask_logging, logger
 import os
+from datetime import datetime
 
 def create_app(config_class=Config):
     # Create the Flask application
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Set up logging only if we're the main process
-    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
-        setup_logging(level=app.config['LOG_LEVEL'])
+    # Set up logging
+    log_level = os.getenv('LOG_LEVEL', 'INFO')
+    setup_logging(level=log_level)
+    setup_flask_logging(app, level=log_level)
+    
+    # Log all requests
+    @app.before_request
+    def log_request():
+        if request.path == '/favicon.ico':
+            return
+        logger.info(f"Request: {request.method} {request.path} - {request.remote_addr}")
+    
+    # Log all responses
+    @app.after_request
+    def log_response(response):
+        if request.path == '/favicon.ico':
+            return response
+        logger.info(f"Response: {request.method} {request.path} - {response.status_code}")
+        return response
     
     # Import routes here to avoid circular imports
     from routes import init_app as init_routes

@@ -1,7 +1,45 @@
 from loguru import logger
 import sys
 import os
+import logging
 from pathlib import Path
+from logging.handlers import RotatingFileHandler
+
+class InterceptHandler(logging.Handler):
+    """Intercept standard logging messages and redirect them to Loguru."""
+    def emit(self, record):
+        # Get corresponding Loguru level if it exists
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        # Find caller from where the logged message originated
+        frame, depth = sys._getframe(6), 6
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(
+            level, record.getMessage()
+        )
+
+def setup_flask_logging(app, level='INFO'):
+    """Configure Flask's logging to use Loguru."""
+    # Disable Flask's default handler
+    app.logger.handlers = []
+    
+    # Set the log level
+    app.logger.setLevel(level.upper())
+    
+    # Add the intercept handler to Flask's logger
+    app.logger.addHandler(InterceptHandler())
+    
+    # Disable propagation to avoid duplicate logs
+    app.logger.propagate = False
+    
+    # Also intercept all other loggers
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
 
 def setup_logging(level='INFO', log_dir='/var/log/breadhub'):
     """
