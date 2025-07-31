@@ -24,8 +24,8 @@ services:
         GUNICORN_WORKER_ID=worker-$i gunicorn \
           --bind 0.0.0.0:5000 \
           --worker-class sync \
-          --workers 4 \
-          --threads 4 \
+          --workers 1 \
+          --threads 2 \
           --timeout 120 \
           --worker-tmp-dir /dev/shm \
           --capture-output \
