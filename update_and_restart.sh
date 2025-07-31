@@ -5,7 +5,7 @@ REPO_DIR="/app"
 # Set the branch to check (e.g., main, master, etc.)
 BRANCH="main"
 # Set the container name
-CONTAINER_NAME="breadhub-api-web"
+CONTAINER_NAME="breadhub-api-web-1"
 
 # Log function
 log() {
