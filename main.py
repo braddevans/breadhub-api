@@ -9,10 +9,11 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Set up logging
-    log_level = os.getenv('LOG_LEVEL', 'INFO')
-    setup_logging(level=log_level)
-    setup_flask_logging(app, level=log_level)
+    # Configure logging only once
+    if not app.debug and not app.testing:
+        log_level = os.getenv('LOG_LEVEL', 'INFO')
+        setup_logging(level=log_level)
+        setup_flask_logging(app, level=log_level)
     
     # Log all requests
     @app.before_request

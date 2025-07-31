@@ -18,6 +18,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Ensure logs are persisted
       - ./logs:/var/log/breadhub
-    # Use a simple Python command that works on Windows
-    command: python -m flask run --host=0.0.0.0 --port=5000 --reload
+    # Use Gunicorn in production
+    command: gunicorn --bind 0.0.0.0:5000 --worker-class sync --workers 4 --threads 2 --timeout 120 wsgi:app
 

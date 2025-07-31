@@ -26,20 +26,29 @@ class InterceptHandler(logging.Handler):
 
 def setup_flask_logging(app, level='INFO'):
     """Configure Flask's logging to use Loguru."""
-    # Disable Flask's default handler
+    # Only configure logging once
+    if hasattr(app, '_logging_configured'):
+        return
+        
+    # Disable default Flask logging
     app.logger.handlers = []
     
     # Set the log level
-    app.logger.setLevel(level.upper())
+    log_level = level.upper()
+    app.logger.setLevel(log_level)
     
     # Add the intercept handler to Flask's logger
-    app.logger.addHandler(InterceptHandler())
+    intercept_handler = InterceptHandler()
+    app.logger.addHandler(intercept_handler)
     
     # Disable propagation to avoid duplicate logs
     app.logger.propagate = False
     
-    # Also intercept all other loggers
-    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    # Configure root logger to use our handler
+    logging.basicConfig(handlers=[intercept_handler], level=0, force=True)
+    
+    # Mark as configured
+    app._logging_configured = True
 
 def setup_logging(level='INFO', log_dir='/var/log/breadhub'):
     """
