@@ -46,7 +46,6 @@ docker-compose.yml
 .git
 .gitignore
 .git-credentials.template
-.git-credentials
 .gitconfig
 
 # Project specific

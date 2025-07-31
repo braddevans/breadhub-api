@@ -6,58 +6,53 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONFAULTHANDLER=1 \
     FLASK_APP=wsgi.py \
-    FLASK_ENV=production
+    FLASK_ENV=production \
+    LOG_LEVEL=INFO
 
-# Set work directory
+# Set work directory and create non-root user
 WORKDIR /app
+
+RUN useradd -m appuser && \
+    chown -R appuser:appuser /app
+
+# Copy application code
+COPY --chown=appuser:appuser . .
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies first (for better layer caching)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install cron, git and other utilities
-RUN apt-get update && apt-get install -y --no-install-recommends \
     cron \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Make the setup scripts executable
-RUN chmod +x /app/setup-git.sh /app/update_and_restart.sh
+# Copy requirements first to leverage Docker cache
+COPY --chown=appuser:appuser requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
-COPY . .
-
-# Make the update script executable
-RUN chmod +x /app/update_and_restart.sh
-
-# Set up cron job for hourly updates
-RUN echo "0 * * * * root /app/update_and_restart.sh" > /etc/cron.d/update-job
-RUN chmod 0644 /etc/cron.d/update-job
-RUN touch /var/log/cron.log
-
-# Set up Git configuration
-RUN /app/setup-git.sh
-
-# Start cron service
-RUN service cron start
-
-# Create log directory and set permissions
-RUN mkdir -p /var/log/breadhub && \
+# Setup scripts and permissions
+RUN chmod +x /app/setup-git.sh /app/update_and_restart.sh && \
+    # Set up cron job for updates
+    echo "0 * * * * root /app/update_and_restart.sh" > /etc/cron.d/update-job && \
+    chmod 0644 /etc/cron.d/update-job && \
+    touch /var/log/cron.log && \
+    # Create log directory
+    mkdir -p /var/log/breadhub && \
     chown -R appuser:appuser /var/log/breadhub && \
     chmod 755 /var/log/breadhub
 
-# Create a non-root user and switch to it
-RUN useradd -m appuser && chown -R appuser:appuser /app
+# Setup Git configuration and start services
+USER root
+RUN /app/setup-git.sh && service cron start
+
+# Switch to non-root user
 USER appuser
 
 # Expose the port the app runs on
 EXPOSE 5000
 
+# Health check
+HEALTHCHECK --interval=530s --timeout=3s \
+    CMD curl -f http://localhost:5000/ || exit 1
+
 # Command to run the application
-# Using exec form for better signal handling
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--worker-class", "sync", "wsgi:app"]
