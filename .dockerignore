@@ -42,6 +42,13 @@ ENV/
 Dockerfile
 docker-compose.yml
 
+# Git
+.git
+.gitignore
+.git-credentials.template
+.git-credentials
+.gitconfig
+
 # Project specific
 uploads/
 *.db

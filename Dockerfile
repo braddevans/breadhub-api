@@ -20,10 +20,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install cron and other utilities
+# Install cron, git and other utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     cron \
+    git \
     && rm -rf /var/lib/apt/lists/*
+
+# Make the setup scripts executable
+RUN chmod +x /app/setup-git.sh /app/update_and_restart.sh
 
 # Copy project
 COPY . .
@@ -35,6 +39,9 @@ RUN chmod +x /app/update_and_restart.sh
 RUN echo "0 * * * * root /app/update_and_restart.sh" > /etc/cron.d/update-job
 RUN chmod 0644 /etc/cron.d/update-job
 RUN touch /var/log/cron.log
+
+# Set up Git configuration
+RUN /app/setup-git.sh
 
 # Start cron service
 RUN service cron start
