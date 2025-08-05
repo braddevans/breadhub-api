@@ -411,38 +411,30 @@ class BarcodeAPI:
         
         try:
             config = self.get_barcode_config(barcode_format)
-            logger.debug("Using barcode config: {}", config)
             
+            # Create the barcode instance
             barcode_instance, writer_options = self._create_barcode_instance(data, barcode_format)
-            logger.debug("Created barcode instance: {}", barcode_instance.__class__.__name__)
             
-            request_writer_options = self._get_writer_options(barcode_format)
-            writer_options.update(request_writer_options)
-            logger.debug("Merged writer options: {}", writer_options)
-            
-            if not writer_options.get('text'):
-                writer_options['text'] = data
-                logger.debug("Set default text to input data")
-            
-            if 'writer' not in writer_options:
-                writer_options['writer'] = ImageWriter()
-                logger.debug("Added default ImageWriter")
-            
+            # Generate the barcode to a buffer
             buffer = BytesIO()
             barcode_instance.write(buffer, writer_options)
             buffer.seek(0)
             
-            logger.success("Successfully generated {} barcode", barcode_format.upper())
-            
             if raw:
-                format_type = writer_options.get("format", "png").lower()
-                logger.debug("Returning raw {} image", format_type)
-                return {
-                    'content': buffer.getvalue(),
-                    'content_type': 'image/png',
-                    'filename': f'barcode_{format_type}.png'
-                }
-                
+                # Return the raw PNG image
+                response = Response(
+                    buffer.getvalue(),
+                    mimetype='image/png',
+                    headers={
+                        'Content-Disposition': f'attachment; filename=barcode_{barcode_format}.png',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                )
+                return response
+            
+            # Return JSON response
             logger.debug("Returning JSON response")
             return self._create_json_response(buffer, data, barcode_format, writer_options)
                 
