@@ -1,19 +1,21 @@
 import base64
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Type, Any, Optional, List, ClassVar, TypeVar
-from flask import Blueprint, request, jsonify, send_file, Response
 from io import BytesIO
 from pathlib import Path
-from barcode.writer import ImageWriter
-from barcode.codex import Code39, Code128, PZN, Gs1_128, PZN7
-from barcode.ean import EuropeanArticleNumber13, JAN, EuropeanArticleNumber8 as EAN8, EuropeanArticleNumber13WithGuard as EAN13_GUARD
-from barcode.isxn import InternationalStandardBookNumber13, InternationalStandardBookNumber10, InternationalStandardSerialNumber
-from barcode.upc import UniversalProductCodeA
-from loguru import logger
+from typing import Dict, Type, Any, Optional, ClassVar, TypeVar
 
+from barcode.codex import Code39, Code128, PZN, Gs1_128, PZN7
 # Import base class for type hints
 from barcode.ean import EAN13  # Using EAN13 as the base class for type hints
+from barcode.ean import EuropeanArticleNumber13, JAN, EuropeanArticleNumber8 as EAN8, \
+    EuropeanArticleNumber13WithGuard as EAN13_GUARD
+from barcode.isxn import InternationalStandardBookNumber13, InternationalStandardBookNumber10, \
+    InternationalStandardSerialNumber
+from barcode.upc import UniversalProductCodeA
+from barcode.writer import ImageWriter
+from flask import Blueprint, request, jsonify, Response
+from loguru import logger
 
 # Type variable for barcode classes
 BarcodeType = TypeVar('BarcodeType', bound=EAN13)  # Using EAN13 as the base class
@@ -364,15 +366,6 @@ class BarcodeAPI:
             ValueError: If the data is invalid for the given format
         """
         config = self.get_barcode_config(barcode_format)
-        
-        if not config.validate_data(data):
-            if config.requires_checksum and not data.isdigit():
-                raise ValueError(f"{barcode_format.upper()} requires numeric input")
-            if len(data) < config.min_length or len(data) > config.max_length:
-                raise ValueError(
-                    f"{barcode_format.upper()} requires data length between "
-                    f"{config.min_length} and {config.max_length} characters"
-                )
     
     def _create_barcode_instance(self, data: str, barcode_format: str):
         """
@@ -401,8 +394,7 @@ class BarcodeAPI:
         
         return barcode_instance, writer_options
     
-    def _create_barcode_response(self, data: str, barcode_format: str, raw: bool = False) -> Response | dict[
-        str, bytes | str]:
+    def _create_barcode_response(self, data: str, barcode_format: str, raw: bool = False):
         """
         Create a barcode and return the appropriate response.
         
@@ -521,7 +513,7 @@ class BarcodeAPI:
             'error': message,
             'status': 'error',
             'status_code': status_code,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now().isoformat()
         })
         response.status_code = status_code
         return response
