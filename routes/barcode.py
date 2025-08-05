@@ -401,7 +401,8 @@ class BarcodeAPI:
         
         return barcode_instance, writer_options
     
-    def _create_barcode_response(self, data: str, barcode_format: str, raw: bool = False) -> Response:
+    def _create_barcode_response(self, data: str, barcode_format: str, raw: bool = False) -> Response | dict[
+        str, bytes | str]:
         """
         Create a barcode and return the appropriate response.
         
@@ -444,12 +445,11 @@ class BarcodeAPI:
             if raw:
                 format_type = writer_options.get("format", "png").lower()
                 logger.debug("Returning raw {} image", format_type)
-                return send_file(
-                    buffer,
-                    mimetype=f'image/{format_type}',
-                    as_attachment=False,
-                    download_name=f'barcode.{format_type}'
-                )
+                return {
+                    'content': buffer.getvalue(),
+                    'content_type': 'image/png',
+                    'filename': f'barcode_{format_type}.png'
+                }
                 
             logger.debug("Returning JSON response")
             return self._create_json_response(buffer, data, barcode_format, writer_options)
