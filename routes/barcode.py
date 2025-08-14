@@ -173,9 +173,12 @@ class BarcodeAPI:
     def __init__(self):
         """Initialize the BarcodeAPI with default settings and register routes."""
         self.bp = Blueprint('barcode', __name__)
-        # Register routes - use root path since the blueprint will be mounted at /barcode
-        self.bp.route('/', methods=['GET'])(self.generate_barcode)
-        self.bp.route('/fonts', methods=['GET'])(self.list_fonts)
+        # Register routes
+        self.bp.route('', methods=['GET'], endpoint='generate_barcode')(self.generate_barcode)
+        self.bp.route('/', methods=['GET'], endpoint='generate_barcode_slash')(self.generate_barcode)
+        self.bp.route('/fonts', methods=['GET'], endpoint='list_fonts')(self.list_fonts)
+        self.bp.route('/writer-options', methods=['GET'], endpoint='list_writer_options')(self.list_writer_options)
+        self.bp.route('/writer-options/<string:format_name>', methods=['GET'], endpoint='get_writer_options')(self.get_writer_options)
     
     def generate_barcode(self):
         """
@@ -199,7 +202,8 @@ class BarcodeAPI:
             if request.args.get('uppercase', 'false').lower() == 'true':
                 data = data.upper()
                 
-            barcode_format = request.args.get('format', 'code128').lower()
+            # Accept both 'type' and 'format' parameters, with 'type' taking precedence
+            barcode_format = request.args.get('type', request.args.get('format', 'code128')).lower()
             raw = request.args.get('raw', 'false').lower() == 'true'
             
             # Validate barcode format
@@ -353,6 +357,65 @@ class BarcodeAPI:
             'fonts': [{'id': k, 'name': Path(v).name} for k, v in fonts.items()],
             'count': len(fonts)
         })
+        
+    def get_writer_options_for_format(self, format_name: str) -> dict:
+        """
+        Get the default writer options for a specific barcode format.
+        
+        Args:
+            format_name: The barcode format (e.g., 'code128', 'ean13')
+            
+        Returns:
+            dict: Default writer options for the format
+        """
+        try:
+            config = self.get_barcode_config(format_name)
+            # Create a copy to avoid modifying the original
+            options = config.default_options.copy()
+            
+            # Remove any non-serializable objects
+            if 'writer' in options:
+                del options['writer']
+                
+            # Add format information
+            options['_format'] = format_name
+            options['_supported_formats'] = ['PNG', 'JPEG', 'GIF', 'BMP', 'TIFF']
+            
+            return options
+        except ValueError:
+            return {}
+    
+    def list_writer_options(self):
+        """
+        List all available barcode formats with their default writer options.
+        
+        Returns:
+            Response: JSON response with available formats and their options
+        """
+        formats = {}
+        for format_name in self.BARCODE_CONFIGS.keys():
+            formats[format_name] = self.get_writer_options_for_format(format_name)
+            
+        return jsonify({
+            'formats': formats,
+            'count': len(formats)
+        })
+        
+    def get_writer_options(self, format_name: str):
+        """
+        Get the default writer options for a specific barcode format.
+        
+        Args:
+            format_name: The barcode format (e.g., 'code128', 'ean13')
+            
+        Returns:
+            Response: JSON response with the format's writer options
+        """
+        options = self.get_writer_options_for_format(format_name)
+        if not options:
+            return self._error_response(f'Unsupported barcode format: {format_name}', 404)
+            
+        return jsonify(options)
 
     def _validate_barcode_data(self, data: str, barcode_format: str) -> None:
         """
@@ -424,12 +487,14 @@ class BarcodeAPI:
                 # Return the raw PNG image
                 response = Response(
                     buffer.getvalue(),
-                    mimetype='image/png',
+                    content_type='image/png',
                     headers={
-                        'Content-Disposition': f'attachment; filename=barcode_{barcode_format}.png',
+                        'Content-Type': 'image/png',
+                        'Content-Length': str(len(buffer.getvalue())),
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
-                        'Expires': '0'
+                        'Expires': '0',
+                        'Content-Disposition': f'inline; filename=barcode_{barcode_format}.png'
                     }
                 )
                 return response
