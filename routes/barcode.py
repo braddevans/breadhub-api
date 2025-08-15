@@ -155,12 +155,16 @@ class BarcodeAPI(BaseRoute):
         logger.info("Generating {} barcode for data: {!r}", barcode_format.upper(), data)
         logger.debug("Raw mode: {}", raw)
         try:
-            # Create barcode instance directly in _create_barcode_response
+            # Get writer options and barcode class
             writer_options = self._get_writer_options(barcode_format)
-            barcode_instance = self.get_barcode_config(barcode_format).barcode_class
-
+            barcode_class = self.get_barcode_config(barcode_format).barcode_class
+            
+            # Create barcode instance with the data and writer
+            barcode_instance = barcode_class(data, writer=ImageWriter())
+            
+            # Create buffer and render the barcode
             buffer = BytesIO()
-            barcode_instance.write(buffer, writer_options)
+            barcode_instance.write(buffer, options=writer_options)
             buffer.seek(0)
             if raw:
                 response = Response(
