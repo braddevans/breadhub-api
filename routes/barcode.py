@@ -2,7 +2,6 @@ import base64
 from dataclasses import dataclass
 from datetime import datetime
 from io import BytesIO
-from typing import Dict, Type, Any, ClassVar, TypeVar, Optional
 
 from barcode.codex import Code128
 from barcode.ean import EuropeanArticleNumber13WithGuard as EAN13_GUARD
@@ -10,28 +9,34 @@ from barcode.writer import ImageWriter
 from flask import Blueprint, request, jsonify, Response
 
 from logging_config import logger
+from middleware import error_response
 
-BarcodeType: TypeVar = TypeVar('BarcodeType', bound=EAN13_GUARD)
+
+from typing import Any, Dict, Optional, Type
 
 @dataclass
 class BarcodeConfig:
-    barcode_class: Type[BarcodeType]
-    default_options: Dict[str, Any] = None
+    barcode_class: Optional[Type] = None
+    default_options: Optional[Dict[str, Any]] = None
     requires_checksum: bool = False
 
     def __post_init__(self):
         if self.default_options is None:
             self.default_options = {}
 
-    def validate_data(self, data: str) -> bool:
-        if not data or (not data.isdigit() and self.requires_checksum):
-            return False
-        return True
+    def validate_data(self, data):
+        return bool(data) and (not self.requires_checksum or data.isdigit())
 
-class BarcodeAPI:
+from . import BaseRoute
 
+class BarcodeAPI(BaseRoute):
+    """Barcode API routes."""
+    
     def __init__(self):
-        self.bp = Blueprint('barcode', __name__)
+        super().__init__('barcode', url_prefix='/barcode')
+        
+    def _register_routes(self):
+        """Register all barcode routes."""
         self.bp.route('', methods=['GET'], endpoint='generate_barcode')(self.generate_barcode)
         self.bp.route('/', methods=['GET'], endpoint='generate_barcode_slash')(self.generate_barcode)
         self.bp.route('/writer-options', methods=['GET'], endpoint='list_all_writer_options')(self.list_all_writer_options)
@@ -51,7 +56,7 @@ class BarcodeAPI:
         'font_path': 'fonts/TypoRoundBold.otf'
     }
 
-    BARCODE_CONFIGS: ClassVar[Dict[str, BarcodeConfig]] = {
+    BARCODE_CONFIGS = {
         'code128': BarcodeConfig(
             barcode_class=Code128,
             default_options=BASE_DEFAULTS.copy()
@@ -73,40 +78,39 @@ class BarcodeAPI:
         )
     }
 
-    _FORMAT_ALIASES: ClassVar[Dict[str, str]] = {fmt: fmt for fmt in BARCODE_CONFIGS.keys()}
+    _FORMAT_ALIASES = {fmt: fmt for fmt in BARCODE_CONFIGS.keys()}
 
     @classmethod
-    def get_barcode_config(cls, format_name: str) -> BarcodeConfig:
+    def get_barcode_config(cls, format_name):
         primary_format = cls._FORMAT_ALIASES.get(format_name.lower())
         if not primary_format:
             raise ValueError(f'Unsupported barcode format: {format_name}')
         return cls.BARCODE_CONFIGS[primary_format]
 
-    def _get_writer_options(self, barcode_format: str) -> dict:
+    def _get_writer_options(self, barcode_format):
         config = self.get_barcode_config(barcode_format)
         options = config.default_options.copy()
-
+        
+        # Define type conversion rules
+        type_rules = {
+            'bool': ['write_text', 'center_text', 'guard_bars'],
+            'float': ['module_width', 'module_height', 'quiet_zone', 'text_distance', 'dpi', 'guard_bar_height'],
+            'int': ['font_size'],
+            'str': ['background', 'foreground', 'text', 'font_path', 'guard_bar_color']
+        }
+        
         for key, value in request.args.items():
-            if key in ['write_text', 'center_text', 'guard_bars']:
+            if key in type_rules['bool']:
                 options[key] = value.lower() == 'true'
-            elif key in ['module_width', 'module_height', 'quiet_zone', 'text_distance', 'dpi', 'guard_bar_height']:
-                try:
-                    options[key] = float(value)
-                except ValueError:
-                    pass
-            elif key in ['font_size']:
-                try:
-                    options[key] = int(value)
-                except ValueError:
-                    pass
-            elif key in ['background', 'foreground', 'text', 'font_path', 'guard_bar_color']:
+            elif key in type_rules['float']:
+                options[key] = float(value) if value.replace('.', '', 1).isdigit() else options.get(key)
+            elif key in type_rules['int']:
+                options[key] = int(float(value)) if value.isdigit() else options.get(key)
+            elif key in type_rules['str']:
                 options[key] = value
             elif key == 'format':
-                img_format = value.upper()
-                if img_format in ['PNG', 'JPEG', 'GIF', 'BMP', 'TIFF']:
-                    options['format'] = img_format
-                else:
-                    options['format'] = 'PNG'
+                options['format'] = value.upper() if value.upper() in {'PNG', 'JPEG', 'GIF', 'BMP', 'TIFF'} else 'PNG'
+                
         return options
 
     def list_all_writer_options(self):
@@ -130,7 +134,7 @@ class BarcodeAPI:
         try:
             data = request.args.get('data')
             if not data:
-                return self._error_response('Missing required parameter: data', 400)
+                return error_response('Missing required parameter: data', 400)
             if request.args.get('uppercase', 'false').lower() == 'true':
                 data = data.upper()
             barcode_format = (request.args.get('type') or request.args.get('format') or 'code128').lower()
@@ -138,25 +142,23 @@ class BarcodeAPI:
             try:
                 self.get_barcode_config(barcode_format)
             except ValueError:
-                return self._error_response(
+                return error_response(
                     f'Unsupported barcode format. Supported formats: {list(self.BARCODE_CONFIGS.keys())}',
                     400
                 )
             return self._create_barcode_response(data, barcode_format, raw)
         except Exception as e:
             logger.error(f"Error generating barcode: {str(e)}", exc_info=True)
-            return self._error_response(str(e), 500)
+            return error_response(str(e), 500)
 
-    def _create_barcode_instance(self, data: str, barcode_format: str):
-        writer_options = self._get_writer_options(barcode_format)
-        barcode_instance = self.get_barcode_config(barcode_format).barcode_class(data, writer=ImageWriter())
-        return barcode_instance, writer_options
-
-    def _create_barcode_response(self, data: str, barcode_format: str, raw: bool = False):
+    def _create_barcode_response(self, data, barcode_format, raw=False):
         logger.info("Generating {} barcode for data: {!r}", barcode_format.upper(), data)
         logger.debug("Raw mode: {}", raw)
         try:
-            barcode_instance, writer_options = self._create_barcode_instance(data, barcode_format)
+            # Create barcode instance directly in _create_barcode_response
+            writer_options = self._get_writer_options(barcode_format)
+            barcode_instance = self.get_barcode_config(barcode_format).barcode_class
+
             buffer = BytesIO()
             barcode_instance.write(buffer, writer_options)
             buffer.seek(0)
@@ -177,13 +179,12 @@ class BarcodeAPI:
             return self._create_json_response(buffer, data, barcode_format, writer_options)
         except ValueError as e:
             logger.warning("Validation error for {} barcode: {}", barcode_format.upper(), str(e))
-            return self._error_response(str(e), 400)
+            return error_response(str(e), 400)
         except Exception as e:
             logger.exception("Failed to generate {} barcode: {}", barcode_format.upper(), str(e))
-            return self._error_response(f"Failed to generate barcode: {str(e)}", 500)
+            return error_response(f"Failed to generate barcode: {str(e)}", 500)
 
-    def _create_json_response(self, buffer: BytesIO, data: str, barcode_format: str,
-                              writer_options: Optional[Dict[str, Any]] = None) -> Response:
+    def _create_json_response(self, buffer, data, barcode_format, writer_options=None):
         buffer.seek(0)
         base64_encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
         serializable_options = {}
@@ -202,24 +203,5 @@ class BarcodeAPI:
         }
         return jsonify(response_data)
 
-    def _error_response(self, message: str, status_code: int) -> Response:
-        if status_code < 500:
-            logger.warning("HTTP {}: {}", status_code, message)
-        else:
-            logger.error("HTTP {}: {}", status_code, message)
-        response = jsonify({
-            'error': message,
-            'status': 'error',
-            'status_code': status_code,
-            'timestamp': datetime.now().isoformat()
-        })
-        response.status_code = status_code
-        return response
-
-
-# Create an instance of the BarcodeAPI
-barcode_api = BarcodeAPI()
-
-# Export the blueprint and URL prefix for use in the application
-barcode_bp = barcode_api.bp
-url_prefix = '/barcode'
+# Create and export the blueprint
+barcode_bp, url_prefix = BarcodeAPI.create()

@@ -1,12 +1,45 @@
 import importlib
-import os
 import sys
 from pathlib import Path
 from flask import Blueprint
 from loguru import logger
+from typing import Optional, Type, TypeVar, Any
 
 # Create main API blueprint
 api_bp = Blueprint('api', __name__)
+
+T = TypeVar('T', bound='BaseRoute')
+
+class BaseRoute:
+    """Base class for all route modules that provides common blueprint setup."""
+    
+    def __init__(self, name: str, import_name: Optional[str] = None, url_prefix: str = ''):
+        """
+        Initialize a new route with a blueprint.
+        
+        Args:
+            name: Name of the blueprint (e.g., 'barcode')
+            import_name: Import name (defaults to __name__ of the module)
+            url_prefix: URL prefix for all routes in this blueprint
+        """
+        self.bp = Blueprint(name, import_name or name)
+        self.url_prefix = url_prefix
+        self._register_routes()
+    
+    def _register_routes(self) -> None:
+        """Register routes with the blueprint. Override this in child classes."""
+        raise NotImplementedError("Subclasses must implement _register_routes")
+    
+    @classmethod
+    def create(cls: Type[T], *args: Any, **kwargs: Any) -> tuple[Blueprint, str]:
+        """
+        Create a new route instance and return its blueprint and URL prefix.
+        
+        Returns:
+            Tuple of (blueprint, url_prefix)
+        """
+        instance = cls(*args, **kwargs)
+        return instance.bp, instance.url_prefix
 
 def init_app(app):
     """
@@ -33,17 +66,19 @@ def init_app(app):
                 module = importlib.import_module(module_name)
             
             # Register the blueprint if the module has one
-            if hasattr(module, 'barcode_bp') and hasattr(module, 'url_prefix'):
-                # Use a simple flag to track if we've registered this blueprint
+            if hasattr(module, 'create_blueprint'):
+                try:
+                    blueprint, url_prefix = module.create_blueprint()
+                    api_bp.register_blueprint(blueprint, url_prefix=url_prefix)
+                    logger.info("Registered blueprint: {} at /api{}", module_name, url_prefix)
+                except Exception as e:
+                    logger.error("Failed to create blueprint for {}: {}", module_name, e)
+            # Backward compatibility with old-style modules
+            elif hasattr(module, 'barcode_bp') and hasattr(module, 'url_prefix'):
                 if not hasattr(module, '_blueprint_registered'):
-                    api_bp.register_blueprint(
-                        module.barcode_bp,
-                        url_prefix=module.url_prefix
-                    )
+                    api_bp.register_blueprint(module.barcode_bp, url_prefix=module.url_prefix)
                     module._blueprint_registered = True
-                    logger.info("Registered blueprint: {} at /api{}", module_name, module.url_prefix)
-                else:
-                    logger.debug("Skipping duplicate registration of blueprint: {}", module_name)
+                    logger.info("Legacy - Registered blueprint: {} at /api{}", module_name, module.url_prefix)
                 
         except Exception as e:
             logger.error("Error importing {}: {}", module_file.stem, e)

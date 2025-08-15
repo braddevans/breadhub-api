@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request
 from config import Config
 from logging_config import setup_logging, setup_flask_logging, logger
+from middleware import init_error_handlers
 import os
 from datetime import datetime
 
@@ -14,6 +15,9 @@ def create_app(config_class=Config):
         log_level = os.getenv('LOG_LEVEL', 'INFO')
         setup_logging(level=log_level)
         setup_flask_logging(app, level=log_level)
+    
+    # Initialize error handlers
+    init_error_handlers(app)
     
     # Log all requests
     @app.before_request
