@@ -4,3 +4,4 @@ colorlog==6.7.0
 Pillow==11.3.0
 loguru==0.7.2
 gunicorn==21.2.0
+pytest==8.2.0

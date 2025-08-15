@@ -43,7 +43,7 @@ def create_app(config_class=Config):
             'version': '1.0.0',
             'endpoints': [
                 '/api/barcode',
-                '/api/barcode/fonts'
+                '/api/barcode/writer-options'
             ]
         })
     
