@@ -31,11 +31,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Setup scripts and permissions
 RUN chmod +x /app/setup-git.sh /app/update_and_restart.sh && \
-    # Set up cron job for updates
     echo "0 * * * * root /app/update_and_restart.sh" > /etc/cron.d/update-job && \
     chmod 0644 /etc/cron.d/update-job && \
     touch /var/log/cron.log && \
-    # Create log directory
     mkdir -p /var/log/breadhub && \
     chown -Rv appuser:appuser /var/log && \
     chmod -Rv 777 /var/log

@@ -6,9 +6,9 @@ logger = getLogger(__name__)
 
 def error_response(message, status_code):
     if status_code < 500:
-        logger.warning("HTTP {}: {}", status_code, message)
+        logger.warning("HTTP %s: %s", status_code, message)
     else:
-        logger.error("HTTP {}: {}", status_code, message)
+        logger.error("HTTP %s: %s", status_code, message)
         
     response = jsonify({
         'error': message,

@@ -20,9 +20,15 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
             depth += 1
 
-        logger.opt(depth=depth, exception=record.exc_info).log(
-            level, record.getMessage()
-        )
+        try:
+            # Get the message and format it if there are args
+            msg = record.getMessage()
+            logger.opt(depth=depth, exception=record.exc_info).log(level, msg)
+        except Exception as e:
+            # Fallback in case of any formatting errors
+            logger.opt(depth=depth, exception=e).error(
+                f"Error formatting log message: {record.msg} with args: {record.args}"
+            )
 
 def setup_flask_logging(app, level='INFO'):
     """Configure Flask's logging to use Loguru."""

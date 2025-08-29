@@ -1,0 +1,139 @@
+/* Base Styles */
+:root {
+    --primary-color: #6f42c1;
+    --secondary-color: #6c757d;
+    --bs-body-bg: #121212;
+    --bs-body-color: #ffffff;
+    --bs-border-color: #495057;
+    --bs-dark-bg-subtle: #1a1a1a;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bs-body-bg) !important;
+    color: var(--bs-body-color);
+}
+
+/* Navigation */
+.navbar {
+    background-color: var(--bs-dark-bg-subtle);
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    color: var(--primary-color) !important;
+}
+
+.nav-link {
+    color: var(--bs-body-color) !important;
+    transition: color 0.2s;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--primary-color) !important;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 2rem 0;
+    position: relative;
+    z-index: 1;
+}
+
+/* Particles.js */
+#particles-js {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    background-color: var(--bs-body-bg) !important;
+}
+
+/* Card Styling */
+.card {
+    background-color: var(--bs-dark-bg-subtle);
+    border-color: var(--bs-border-color);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+/* Form Controls */
+.form-control, .form-select {
+    background-color: var(--bs-dark-bg-subtle);
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--bs-dark-bg-subtle);
+    color: var(--bs-body-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+}
+
+/* Range Inputs */
+.form-range::-webkit-slider-thumb {
+    background-color: var(--primary-color);
+}
+
+.form-range::-moz-range-thumb {
+    background-color: var(--primary-color);
+}
+
+/* Status Messages */
+.status-message {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.status-message.show {
+    opacity: 1;
+}
+
+/* Nav Tabs */
+.nav-tabs .nav-link {
+    color: #8e8e8e;
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--bs-body-color);
+    background-color: transparent;
+    border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-dark-bg-subtle);
+}
+
+/* Footer */
+footer {
+    background-color: var(--bs-dark-bg-subtle);
+    padding: 1.5rem 0;
+    margin-top: auto;
+}
+
+/* Utility Classes */
+.text-muted {
+    color: #8e8e8e !important;
+}
+
+/* Container */
+.container {
+    position: relative;
+    z-index: 1;
+}

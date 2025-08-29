@@ -6,7 +6,7 @@ from io import BytesIO
 from barcode.codex import Code128
 from barcode.ean import EuropeanArticleNumber13WithGuard as EAN13_GUARD
 from barcode.writer import ImageWriter
-from flask import Blueprint, request, jsonify, Response
+from flask import Blueprint, request, jsonify, Response, render_template
 
 from logging_config import logger
 from middleware import error_response
@@ -155,12 +155,16 @@ class BarcodeAPI(BaseRoute):
         logger.info("Generating {} barcode for data: {!r}", barcode_format.upper(), data)
         logger.debug("Raw mode: {}", raw)
         try:
+            # Get barcode config first to validate the format
+            barcode_config = self.get_barcode_config(barcode_format)
+            if not barcode_config.barcode_class:
+                raise ValueError(f'No barcode class defined for format: {barcode_format}')
+                
             # Get writer options and barcode class
             writer_options = self._get_writer_options(barcode_format)
-            barcode_class = self.get_barcode_config(barcode_format).barcode_class
             
             # Create barcode instance with the data and writer
-            barcode_instance = barcode_class(data, writer=ImageWriter())
+            barcode_instance = barcode_config.barcode_class(data, writer=ImageWriter())
             
             # Create buffer and render the barcode
             buffer = BytesIO()

@@ -1,13 +1,15 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from config import Config
 from logging_config import setup_logging, setup_flask_logging, logger
 from middleware import init_error_handlers
+from routes.pages import init_pages
 import os
 from datetime import datetime
 
 def create_app(config_class=Config):
-    # Create the Flask application
-    app = Flask(__name__)
+    # Create the Flask application with absolute path to templates
+    template_dir = os.path.abspath('templates')
+    app = Flask(__name__, template_folder=template_dir)
     app.config.from_object(config_class)
     
     # Configure logging only once
@@ -19,6 +21,9 @@ def create_app(config_class=Config):
     # Initialize error handlers
     init_error_handlers(app)
     
+    # Initialize pages
+    init_pages(app)
+
     # Log all requests
     @app.before_request
     def log_request():
@@ -39,17 +44,10 @@ def create_app(config_class=Config):
     
     # Initialize routes
     init_routes(app)
-    
+
     @app.route('/')
     def index():
-        return jsonify({
-            'name': 'BreadHub API',
-            'version': '1.0.0',
-            'endpoints': [
-                '/api/barcode',
-                '/api/barcode/writer-options'
-            ]
-        })
+        return render_template('index.html')
     
     return app
 
