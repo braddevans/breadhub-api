@@ -1,11 +1,139 @@
 /* Base Styles */
+/* Font Face Declarations */
+@font-face {
+    font-family: 'Open Sans';
+    src: url('/static/fonts/OpenSans.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Roboto';
+    src: url('/static/fonts/Roboto.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Lato';
+    src: url('/static/fonts/Lato.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('/static/fonts/Montserrat.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Source Sans Pro';
+    src: url('/static/fonts/SourceSansPro.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Roboto Mono';
+    src: url('/static/fonts/RobotoMono.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Courier Prime';
+    src: url('/static/fonts/CourierPrime.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Barlow';
+    src: url('/static/fonts/Barlow.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Inter';
+    src: url('/static/fonts/Inter.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Fira Code';
+    src: url('/static/fonts/FiraCode.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
-    --primary-color: #6f42c1;
-    --secondary-color: #6c757d;
-    --bs-body-bg: #121212;
-    --bs-body-color: #ffffff;
+    /* Theme Colors */
+    --bs-primary: #6f42c1;
+    --bs-primary-rgb: 111, 66, 193;
+    --bs-secondary: #6c757d;
+    --bs-secondary-rgb: 108, 117, 125;
+    --bs-success: #198754;
+    --bs-info: #0dcaf0;
+    --bs-warning: #ffc107;
+    --bs-danger: #dc3545;
+    --bs-light: #f8f9fa;
+    --bs-dark: #212529;
+    
+    /* Light theme - Neutral gray */
+    --bs-body-bg: #f0f2f5;
+    --bs-body-color: #2d3748;
+    --bs-border-color: #d1d5db;
+    --bs-card-bg: #ffffff;
+    --bs-dark-bg-subtle: #e5e7eb;
+    --bs-secondary-bg: #e5e7eb;
+    --bs-tertiary-bg: #f3f4f6;
+    --bs-form-control-bg: #ffffff;
+    --bs-form-control-color: #1f2937;
+    --bs-form-control-border: #d1d5db;
+    --bs-form-control-focus: #9ca3af;
+    --bs-form-control-disabled-bg: #e9ecef;
+    --bs-form-control-disabled-color: #6c757d;
+    
+    /* Aliases for backward compatibility */
+    --primary-color: var(--bs-primary);
+    --primary-hover: #5e35b1;
+    --secondary-color: var(--bs-secondary);
+    --success-color: var(--bs-success);
+    --info-color: var(--bs-info);
+    --warning-color: var(--bs-warning);
+    --danger-color: var(--bs-danger);
+    --light-color: var(--bs-light);
+    --dark-color: var(--bs-dark);
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #212529;
+    --bs-body-color: #f8f9fa;
     --bs-border-color: #495057;
-    --bs-dark-bg-subtle: #1a1a1a;
+    --bs-card-bg: #2c3034;
+    --bs-dark-bg-subtle: #1a1d20;
+    --bs-secondary-bg: #2b3035;
+    --bs-tertiary-bg: #2b3035;
+    --bs-form-control-bg: #2c3034;
+    --bs-form-control-color: #f8f9fa;
+    --bs-form-control-border: #495057;
+    --bs-form-control-focus: #6f42c1;
+    --bs-form-control-disabled-bg: #343a40;
+    --bs-form-control-disabled-color: #6c757d;
 }
 
 body {
@@ -14,7 +142,8 @@ body {
     flex-direction: column;
     margin: 0;
     padding: 0;
-    background-color: var(--bs-body-bg) !important;
+    background: linear-gradient(135deg, var(--bs-body-bg) 0%, #f0f4f8 50%, #e6f0f9 100%) fixed;
+    background-attachment: fixed;
     color: var(--bs-body-color);
 }
 
@@ -38,6 +167,31 @@ body {
     color: var(--primary-color) !important;
 }
 
+/* Theme Toggle Button */
+#themeToggle {
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+    background-color: transparent;
+    transition: all 0.3s ease;
+}
+
+#themeToggle:hover {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
+[data-bs-theme="light"] #themeToggle {
+    color: var(--bs-body-color);
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="light"] #themeToggle:hover {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-primary);
+    color: var(--bs-primary);
+}
+
 /* Main Content */
 .main-content {
     flex: 1;
@@ -59,38 +213,137 @@ body {
 
 /* Card Styling */
 .card {
-    background-color: var(--bs-dark-bg-subtle);
+    background-color: var(--bs-card-bg);
     border-color: var(--bs-border-color);
     margin-bottom: 1.5rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    color: var(--bs-body-color);
+}
+
+.card-body {
+    color: var(--bs-body-color);
+    background-color: transparent;
 }
 
 .card-header {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: var(--bs-card-bg);
     border-bottom: 1px solid var(--bs-border-color);
+    color: var(--bs-body-color);
+}
+
+/* Ensure form elements inside cards respect the theme */
+.card .form-control,
+.card .form-select,
+.card .form-range {
+    background-color: var(--bs-form-control-bg);
+    color: var(--bs-form-control-color);
+    border-color: var(--bs-form-control-border);
+}
+
+.card .form-control:focus,
+.card .form-select:focus {
+    background-color: var(--bs-form-control-bg);
+    color: var(--bs-form-control-color);
+    border-color: var(--bs-form-control-focus);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.15);
 }
 
 /* Form Controls */
 .form-control, .form-select {
-    background-color: var(--bs-dark-bg-subtle);
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
+    background-color: var(--bs-form-control-bg);
+    color: var(--bs-form-control-color);
+    border-color: var(--bs-form-control-border);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .form-control:focus, .form-select:focus {
-    background-color: var(--bs-dark-bg-subtle);
-    color: var(--bs-body-color);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+    background-color: var(--bs-form-control-bg);
+    color: var(--bs-form-control-color);
+    border-color: var(--bs-form-control-focus);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.15);
 }
 
 /* Range Inputs */
+.form-range {
+    transition: opacity 0.3s ease;
+}
+
+/* Webkit browsers (Chrome, Safari, etc.) */
+.form-range::-webkit-slider-runnable-track {
+    background: var(--bs-secondary-bg);
+    border-radius: 1rem;
+    height: 0.5rem;
+}
+
 .form-range::-webkit-slider-thumb {
-    background-color: var(--primary-color);
+    background: var(--primary-color);
+    border: none;
+    border-radius: 50%;
+    height: 1.25rem;
+    margin-top: -0.375rem;
+    width: 1.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-range::-webkit-slider-thumb:active {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+}
+
+/* Firefox */
+.form-range::-moz-range-track {
+    background: var(--bs-secondary-bg);
+    border-radius: 1rem;
+    height: 0.5rem;
 }
 
 .form-range::-moz-range-thumb {
-    background-color: var(--primary-color);
+    background: var(--primary-color);
+    border: none;
+    border-radius: 50%;
+    height: 1.25rem;
+    width: 1.25rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-range::-moz-range-thumb:active {
+    transform: scale(1.2);
+    box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+}
+
+/* Focus styles */
+.form-range:focus {
+    outline: 0;
+}
+
+.form-range:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.form-range:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Theme-specific overrides */
+[data-bs-theme="light"] {
+    --bs-body-bg: #f0f2f5;
+    --bs-card-bg: #ffffff;
+    --bs-dark-bg-subtle: #e5e7eb;
+    --bs-form-control-bg: #ffffff;
+    --bs-form-control-color: #1f2937;
+    --bs-form-control-border: #d1d5db;
+    --bs-form-control-focus: #9ca3af;
+}
+
+[data-bs-theme="dark"] {
+    --bs-body-bg: #212529;
+    --bs-card-bg: #2c3034;
+    --bs-dark-bg-subtle: #1a1d20;
+    --bs-form-control-bg: #2c3034;
+    --bs-form-control-color: #f8f9fa;
+    --bs-form-control-border: #495057;
+    --bs-form-control-focus: #6f42c1;
 }
 
 /* Status Messages */
@@ -108,16 +361,28 @@ body {
 }
 
 /* Nav Tabs */
+.nav-tabs {
+    border-bottom-color: var(--bs-border-color);
+}
+
 .nav-tabs .nav-link {
-    color: #8e8e8e;
+    color: var(--bs-secondary);
     background-color: transparent;
     border-color: transparent;
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--bs-body-color);
+    border-color: transparent;
+    isolation: isolate;
 }
 
 .nav-tabs .nav-link.active {
-    color: var(--bs-body-color);
+    color: var(--bs-primary);
     background-color: transparent;
-    border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-dark-bg-subtle);
+    border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
+    border-bottom-color: var(--bs-primary) !important;
 }
 
 /* Footer */
@@ -129,11 +394,197 @@ footer {
 
 /* Utility Classes */
 .text-muted {
-    color: #8e8e8e !important;
+    color: var(--bs-secondary) !important;
 }
 
 /* Container */
 .container {
     position: relative;
     z-index: 1;
+}
+
+
+/* Barcode Generator Specific Styles */
+.preview-container {
+    background: var(--bs-card-bg);
+    padding: 1.25rem;
+    border-radius: .75rem;
+    text-align: center;
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin: 1rem 0;
+    position: relative;
+    overflow: hidden;
+    border: 2px dashed var(--bs-border-color);
+    transition: border-color .2s ease, background-color .2s ease;
+}
+
+/* Barcode Preview Container */
+#barcodePreviewContainer {
+    position: relative;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bs-body-bg);
+    border-radius: .25rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    border: 1px solid var(--bs-border-color);
+    transition: all 0.3s ease;
+}
+
+/* Barcode Placeholder */
+#barcodePlaceholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--bs-secondary);
+    transition: all 0.3s ease;
+}
+
+#barcodePlaceholder .bi-upc-scan {
+font-size: 3rem;
+margin-bottom: 0.5rem;
+color: var(--bs-secondary);
+}
+
+.placeholder-text {
+font-size: 0.9rem;
+margin-top: 0.5rem;
+}
+
+/* Barcode Image */
+#barcodePreview {
+max-width: 100%;
+max-height: 180px;
+object-fit: contain;
+display: none;
+}
+
+/* When barcode is generated */
+#barcodePreviewContainer.has-barcode #barcodePlaceholder {
+display: none;
+}
+
+#barcodePreviewContainer.has-barcode #barcodePreview {
+display: block;
+}
+
+#barcodePreviewContainer:not(.has-barcode) #barcodePreview {
+display: none;
+.sticky-top {
+    top: 1rem;
+}
+
+.btn-copy {
+    position: relative;
+}
+
+.badge-setting {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Card styling for barcode generator */
+.barcode-card {
+    background-color: var(--bs-card-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--bs-border-color);
+    transition: all 0.3s ease;
+}
+
+/* Form controls in barcode generator */
+.barcode-card .form-control,
+.barcode-card .form-select {
+    background-color: var(--bs-form-control-bg);
+    color: var(--bs-form-control-color);
+    border-color: var(--bs-form-control-border);
+}
+
+/* Tab content in barcode generator */
+.tab-content {
+    background-color: var(--bs-card-bg);
+    border: 1px solid var(--bs-border-color);
+    border-top: none;
+    border-radius: 0 0 0.375rem 0.375rem;
+    padding: 1.25rem;
+}
+
+/* Form range custom styling */
+.form-range {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--bs-secondary-bg);
+    outline: none;
+}
+
+.form-range:focus {
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Color inputs */
+.form-control-color {
+    width: 3rem;
+    height: 2.25rem;
+    padding: 0.25rem;
+    background-color: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+}
+
+/* Badges and labels */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.5em;
+}
+
+/* Buttons in barcode card */
+.barcode-card .btn-outline-light {
+    color: var(--bs-form-control-color);
+    border-color: var(--bs-form-control-border);
+    background-color: transparent;
+}
+
+.barcode-card .btn-outline-light:hover {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+}
+
+/* Tab navigation */
+.nav-tabs .nav-link {
+    color: var(--bs-secondary);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--bs-primary);
+    background-color: var(--bs-body-bg);
+    border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
+}
+
+/* Form switches */
+.form-check-input:checked {
+    background-color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.form-check-input:focus {
+    border-color: var(--bs-form-control-focus);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.15);
+}
+
+/* Disabled form controls */
+.form-control:disabled,
+.form-select:disabled,
+.form-range:disabled {
+    background-color: var(--bs-form-control-disabled-bg);
+    color: var(--bs-form-control-disabled-color);
+    opacity: 0.8;
 }

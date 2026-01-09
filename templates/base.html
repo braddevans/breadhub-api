@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}BreadHub API{% endblock %}</title>
+    <title>{% block title %}{{ site_name }}{% endblock %}</title>
     <!-- Bootstrap 5.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
@@ -34,7 +34,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">BreadHub</a>
+            <a class="navbar-brand" href="{{ url_for('index') }}">{{ site_name }}</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -50,11 +50,6 @@
                         <a class="nav-link {% if request.endpoint == 'pages.barcode_generator' %}active{% endif %}" 
                            href="{{ url_for('pages.barcode_generator') }}">
                             <i class="bi bi-upc-scan"></i> Barcode Generator
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-book"></i> API Docs
                         </a>
                     </li>
                 </ul>
@@ -88,7 +83,7 @@
     <!-- Footer -->
     <footer class="text-center text-muted">
         <div class="container">
-            <p class="mb-0">&copy; {{ now().year }} BreadHub API. All rights reserved.</p>
+            <p class="mb-0">&copy; {{ now().year }} {{ site_name }}. All rights reserved.</p>
         </div>
     </footer>
 
@@ -116,34 +111,37 @@
     <!-- Theme Toggle Script -->
     <script>
         // Theme toggle functionality
-        const themeToggle = document.getElementById('themeToggle');
-        const html = document.documentElement;
-        
-        // Check for saved theme preference or use preferred color scheme
-        const savedTheme = localStorage.getItem('theme') || 
-                          (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        
-        // Apply the theme
-        html.setAttribute('data-bs-theme', savedTheme);
-        
-        // Toggle theme
-        themeToggle.addEventListener('click', () => {
-            const currentTheme = html.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('themeToggle');
+            const html = document.documentElement;
             
-            html.setAttribute('data-bs-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            // Check for saved theme preference or use preferred color scheme
+            const savedTheme = localStorage.getItem('bs-theme') || 
+                             (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             
-            // Update icon
-            const icon = themeToggle.querySelector('i');
-            icon.className = newTheme === 'dark' ? 'bi bi-moon-stars' : 'bi bi-sun';
+            // Apply the theme
+            html.setAttribute('data-bs-theme', savedTheme);
+            
+            // Update button icon
+            function updateIcon() {
+                const icon = themeToggle.querySelector('i');
+                const currentTheme = html.getAttribute('data-bs-theme') || 'dark';
+                icon.className = currentTheme === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+            }
+            
+            // Toggle theme
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = html.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                html.setAttribute('data-bs-theme', newTheme);
+                localStorage.setItem('bs-theme', newTheme);
+                updateIcon();
+            });
+            
+            // Set initial icon
+            updateIcon();
         });
-        
-        // Set initial icon
-        const icon = themeToggle.querySelector('i');
-        if (savedTheme === 'light') {
-            icon.className = 'bi bi-sun';
-        }
     </script>
     
     {% block extra_js %}{% endblock %}
@@ -154,28 +152,56 @@
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     
     <!-- Initialize particles.js -->
+    <style>
+        #particles-js {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            background-color: rgba(30, 30, 40, 0.6);
+            background-image: linear-gradient(to bottom, rgba(40, 40, 60, 0.8), rgba(20, 20, 30, 0.9));
+        }
+    </style>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         if (typeof particlesJS !== 'undefined') {
             particlesJS('particles-js', {
                 particles: {
-                    number: { value: 80, density: { enable: true, value_area: 800 } },
-                    color: { value: '#6f42c1' },
-                    shape: { type: 'circle' },
-                    opacity: { value: 0.5, random: true },
-                    size: { value: 3, random: true },
+                    number: { 
+                        value: 60, 
+                        density: { 
+                            enable: true, 
+                            value_area: 1000 
+                        } 
+                    },
+                    color: { 
+                        value: '#9c88ff' 
+                    },
+                    shape: { 
+                        type: 'circle' 
+                    },
+                    opacity: { 
+                        value: 0.7, 
+                        random: true 
+                    },
+                    size: { 
+                        value: 3, 
+                        random: true 
+                    },
                     line_linked: {
                         enable: true,
-                        distance: 150,
-                        color: '#6f42c1',
-                        opacity: 0.4,
+                        distance: 200,
+                        color: '#9c88ff',
+                        opacity: 0.3,
                         width: 1
                     },
                     move: {
                         enable: true,
-                        speed: 1,
+                        speed: 1.5,
                         direction: 'none',
-                        random: false,
+                        random: true,
                         straight: false,
                         out_mode: 'out',
                         bounce: false
@@ -184,13 +210,26 @@
                 interactivity: {
                     detect_on: 'canvas',
                     events: {
-                        onhover: { enable: true, mode: 'grab' },
-                        onclick: { enable: true, mode: 'push' },
+                        onhover: { 
+                            enable: true, 
+                            mode: 'grab' 
+                        },
+                        onclick: { 
+                            enable: true, 
+                            mode: 'push' 
+                        },
                         resize: true
                     },
                     modes: {
-                        grab: { distance: 140, line_linked: { opacity: 1 } },
-                        push: { particles_nb: 4 }
+                        grab: { 
+                            distance: 160, 
+                            line_linked: { 
+                                opacity: 0.6 
+                            } 
+                        },
+                        push: { 
+                            particles_nb: 3 
+                        }
                     }
                 },
                 retina_detect: true

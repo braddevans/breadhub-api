@@ -63,12 +63,12 @@ def test_override_font_path(client):
         query_string={
             "data": "123456789012",
             "type": "code128",
-            "font_path": "fonts/TypoRoundBold.otf"
+            "font_path": "fonts/typo-round-bold.ttf"
         }
     )
     assert response.status_code == 200
     json_data = response.get_json()
-    assert json_data["options"]["font_path"] == "fonts/TypoRoundBold.otf"
+    assert json_data["options"]["font_path"] == "fonts/typo-round-bold.ttf"
 
 
 def test_missing_data_param(client):

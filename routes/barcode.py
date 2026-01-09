@@ -53,7 +53,7 @@ class BarcodeAPI(BaseRoute):
         'background': 'white',
         'foreground': 'black',
         'dpi': 300,
-        'font_path': 'fonts/TypoRoundBold.otf'
+        'font_path': 'fonts/{font_family}.ttf'  # Will be formatted with the selected font
     }
 
     BARCODE_CONFIGS = {
@@ -90,6 +90,12 @@ class BarcodeAPI(BaseRoute):
     def _get_writer_options(self, barcode_format):
         config = self.get_barcode_config(barcode_format)
         options = config.default_options.copy()
+        
+        # Get font family from request and format the font path
+        font_family = request.args.get('font_family', 'Roboto')
+        # Replace spaces with dashes and convert to lowercase for the filename
+        font_filename = font_family.replace(' ', '-').lower()
+        options['font_path'] = options['font_path'].format(font_family=font_filename)
         
         # Define type conversion rules
         type_rules = {

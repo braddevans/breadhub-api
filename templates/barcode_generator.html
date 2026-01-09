@@ -2,172 +2,158 @@
 
 {% block title %}Barcode Generator - {{ super() }}{% endblock %}
 
-{% block extra_css %}
-<style>
-  .preview-container {
-    background: var(--bs-body-bg);
-    padding: 1.25rem;
-    border-radius: .75rem;
-    text-align: center;
-    min-height: 220px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin: 1rem 0;
-    position: relative;
-    overflow: hidden;
-    border: 2px dashed var(--bs-border-color);
-    transition: border-color .2s ease, background-color .2s ease;
-  }
-  #barcodePlaceholder { color: var(--bs-secondary); text-align:center; }
-  #barcodePreview { max-width: 100%; max-height: 200px; object-fit: contain; background: #fff; border-radius: .25rem; padding: .5rem; display: none; cursor: pointer; margin-top:1rem; }
-  /* Ensure placeholder text remains visible even when a barcode is shown */
-  #barcodePreviewContainer.has-barcode #barcodePlaceholder { display: block; opacity:0.6; }
-  .options-panel .form-range { width: 100%; }
-  .sticky-top { top: 1rem; }
-  .btn-copy { position: relative; }
-  .badge-setting { font-variant-numeric: tabular-nums; }
-  .card { background-color: rgba(45,45,45,0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,.08); }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container mt-4">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center">
-      <h1 class="h3 m-0"><i class="bi bi-upc-scan me-2"></i>Barcode Generator</h1>
-      <div>
-        <button class="btn btn-outline-secondary" id="btnReset" title="Reset all fields">
-          <i class="bi bi-arrow-counterclockwise"></i> Reset
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <div class="row g-4">
-    <!-- Left: Inputs + Preview -->
-    <div class="col-lg-8">
-      <div class="card mb-4">
-        <div class="card-header">
-          <ul class="nav nav-tabs card-header-tabs" id="barcodeTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="code128-tab" data-bs-toggle="tab" data-bs-target="#code128" type="button" role="tab">Code 128</button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="ean13-tab" data-bs-toggle="tab" data-bs-target="#ean13" type="button" role="tab">EAN-13</button>
-            </li>
-          </ul>
-        </div>
-        <div class="card-body">
-          <div class="tab-content" id="barcodeTabsContent">
-            <!-- Code 128 Tab -->
-            <div class="tab-pane fade show active" id="code128" role="tabpanel">
-              <div class="mb-3">
-                <label for="code128Data" class="form-label">Data (any text)</label>
-                <input type="text" class="form-control" id="code128Data" value="CODE128" autocomplete="off" />
-              </div>
-              <button class="btn btn-primary" id="btnGenCode128">Generate</button>
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1 class="h3 m-0"><i class="bi bi-upc-scan me-2"></i>Barcode Generator</h1>
+            <div>
+                <button class="btn btn-outline-secondary" id="btnReset" title="Reset all fields">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                </button>
             </div>
-
-            <!-- EAN-13 Tab -->
-            <div class="tab-pane fade" id="ean13" role="tabpanel">
-              <div class="mb-3">
-                <label for="ean13Data" class="form-label">Data (12 digits)</label>
-                <input type="text" class="form-control" id="ean13Data" value="123456789012" inputmode="numeric" pattern="\d{12}" autocomplete="off" />
-                <div class="form-text">Enter 12 digits; checksum (13th) is calculated automatically.</div>
-              </div>
-              <button class="btn btn-primary" id="btnGenEan13">Generate</button>
-            </div>
-          </div>
         </div>
-      </div>
-
-      <!-- Preview Card -->
-      <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between">
-          <h5 class="mb-0">Barcode Preview</h5>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-light btn-sm btn-copy" id="copyBarcodeBtn" title="Copy barcode image"><i class="bi bi-clipboard2"></i> Image</button>
-            <button class="btn btn-outline-light btn-sm btn-copy" id="copyRawUrlBtn" title="Copy raw image URL for use in Excel"><i class="bi bi-link-45deg"></i> Raw URL (for Excel)</button>
-            <button class="btn btn-outline-light btn-sm btn-copy" id="copyLinkBtn" title="Copy shareable URL"><i class="bi bi-share"></i> Share</button>
-            <button class="btn btn-outline-light btn-sm btn-copy" id="copySettingsBtn" title="Copy settings as JSON"><i class="bi bi-braces"></i> JSON</button>
-          </div>
-        </div>
-        <div class="card-body text-center">
-          <div class="preview-container" id="barcodePreviewContainer">
-            <div id="barcodePlaceholder">
-              <i class="bi bi-upc-scan" style="font-size:3rem;"></i>
-              <div class="placeholder-text">Your barcode will appear here</div>
-            </div>
-            <img id="barcodePreview" alt="Generated barcode (click to copy image)" title="Click to copy image" />
-          </div>
-          <div id="barcodeData" class="mt-2 small text-muted" aria-live="polite"></div>
-        </div>
-      </div>
     </div>
 
-    <!-- Right: Options -->
-    <div class="col-lg-4">
-      <div class="sticky-top">
-        <div class="card">
-          <div class="card-header"><h5 class="mb-0">Barcode Options</h5></div>
-          <div class="card-body options-panel">
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="writeText" checked>
-              <label class="form-check-label" for="writeText">Show Text</label>
-            </div>
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="centerText" checked>
-              <label class="form-check-label" for="centerText">Center Text</label>
+    <div class="row g-4">
+        <!-- Left: Inputs + Preview -->
+        <div class="col-lg-8">
+            <div class="card barcode-card mb-4">
+                <div class="card-header">
+                    <ul class="nav nav-tabs card-header-tabs" id="barcodeTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="code128-tab" data-bs-toggle="tab" data-bs-target="#code128" type="button" role="tab">Code 128</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="ean13-tab" data-bs-toggle="tab" data-bs-target="#ean13" type="button" role="tab">EAN-13</button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="barcodeTabsContent">
+                        <!-- Code 128 Tab -->
+                        <div class="tab-pane fade show active" id="code128" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="code128Data" class="form-label">Data (any text)</label>
+                                <input type="text" class="form-control" id="code128Data" value="CODE128" autocomplete="off" />
+                            </div>
+                            <button class="btn btn-primary" id="btnGenCode128">Generate</button>
+                        </div>
+
+                        <!-- EAN-13 Tab -->
+                        <div class="tab-pane fade" id="ean13" role="tabpanel">
+                            <div class="mb-3">
+                                <label for="ean13Data" class="form-label">Data (12 digits)</label>
+                                <input type="text" class="form-control" id="ean13Data" value="123456789012" inputmode="numeric" pattern="\d{12}" autocomplete="off" />
+                                <div class="form-text">Enter 12 digits; checksum (13th) is calculated automatically.</div>
+                            </div>
+                            <button class="btn btn-primary" id="btnGenEan13">Generate</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="mb-3">
-              <label for="moduleWidth" class="form-label">Module Width: <span id="moduleWidthValue" class="badge-setting">0.20</span></label>
-              <input type="range" class="form-range" min="0.1" max="1" step="0.05" id="moduleWidth" value="0.2">
+            <!-- Preview Card -->
+            <div class="card barcode-card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0">Barcode Preview</h5>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-light btn-sm btn-copy" id="copyBarcodeBtn" title="Copy barcode image"><i class="bi bi-clipboard2"></i> Image</button>
+                        <button class="btn btn-outline-light btn-sm btn-copy" id="copyRawUrlBtn" title="Copy raw image URL for use in Excel"><i class="bi bi-link-45deg"></i> Raw URL</button>
+                        <button class="btn btn-outline-light btn-sm btn-copy" id="copyLinkBtn" title="Copy shareable URL"><i class="bi bi-share"></i> Share</button>
+                        <button class="btn btn-outline-light btn-sm btn-copy" id="copySettingsBtn" title="Copy settings as JSON"><i class="bi bi-braces"></i> JSON</button>
+                    </div>
+                </div>
+                <div class="card-body text-center">
+                    <div class="preview-container" id="barcodePreviewContainer">
+                        <div id="barcodePlaceholder">
+                            <i class="bi bi-upc-scan" style="font-size:3rem;"></i>
+                            <div class="placeholder-text">Your barcode will appear here</div>
+                        </div>
+                        <img id="barcodePreview" alt="Generated barcode (click to copy image)" title="Click to copy image" />
+                    </div>
+                    <div id="barcodeData" class="mt-2 small text-muted" aria-live="polite"></div>
+                </div>
             </div>
-            <div class="mb-3">
-              <label for="moduleHeight" class="form-label">Module Height: <span id="moduleHeightValue" class="badge-setting">15.0</span></label>
-              <input type="range" class="form-range" min="5" max="50" step="1" id="moduleHeight" value="15">
-            </div>
-            <div class="mb-3">
-              <label for="quietZone" class="form-label">Quiet Zone: <span id="quietZoneValue" class="badge-setting">4.0</span></label>
-              <input type="range" class="form-range" min="1" max="20" step="0.5" id="quietZone" value="4">
-            </div>
-            <div class="mb-3">
-              <label for="fontSize" class="form-label">Font Size: <span id="fontSizeValue" class="badge-setting">10</span></label>
-              <input type="range" class="form-range" min="6" max="36" step="1" id="fontSize" value="10">
-            </div>
-            <div class="mb-3">
-              <label for="textDistance" class="form-label">Text Distance: <span id="textDistanceValue" class="badge-setting">5.0</span></label>
-              <input type="range" class="form-range" min="0" max="20" step="0.5" id="textDistance" value="5">
-            </div>
-            <div class="mb-3">
-              <label for="foregroundColor" class="form-label">Foreground Color</label>
-              <input type="color" class="form-control form-control-color" id="foregroundColor" value="#000000">
-            </div>
-            <div class="mb-3">
-              <label for="backgroundColor" class="form-label">Background Color</label>
-              <input type="color" class="form-control form-control-color" id="backgroundColor" value="#FFFFFF">
-            </div>
-
-            <!-- EAN-13 specific options -->
-            <div id="ean13Options" class="border-top pt-3" style="display:none;">
-              <div class="form-check form-switch mb-3">
-                <input class="form-check-input" type="checkbox" id="guardBars" checked>
-                <label class="form-check-label" for="guardBars">Show Guard Bars</label>
-              </div>
-              <div class="mb-3">
-                <label for="guardBarHeight" class="form-label">Guard Bar Height: <span id="guardBarHeightValue" class="badge-setting">15.0</span></label>
-                <input type="range" class="form-range" min="5" max="50" step="1" id="guardBarHeight" value="15">
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
+
+        <!-- Right: Options -->
+        <div class="col-lg-4">
+            <div class="sticky-top">
+                <div class="card barcode-card">
+                    <div class="card-header"><h5 class="mb-0">Barcode Options</h5></div>
+                    <div class="card-body options-panel">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="writeText" checked>
+                            <label class="form-check-label" for="writeText">Show Text</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="centerText" checked>
+                            <label class="form-check-label" for="centerText">Center Text</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="moduleWidth" class="form-label">Module Width: <span id="moduleWidthValue" class="badge bg-secondary badge-setting">0.20</span></label>
+                            <input type="range" class="form-range" min="0.1" max="1" step="0.05" id="moduleWidth" value="0.2">
+                        </div>
+                        <div class="mb-3">
+                            <label for="moduleHeight" class="form-label">Module Height: <span id="moduleHeightValue" class="badge bg-secondary badge-setting">15.0</span></label>
+                            <input type="range" class="form-range" min="5" max="50" step="1" id="moduleHeight" value="15">
+                        </div>
+                        <div class="mb-3">
+                            <label for="quietZone" class="form-label">Quiet Zone: <span id="quietZoneValue" class="badge bg-secondary badge-setting">4.0</span></label>
+                            <input type="range" class="form-range" min="1" max="20" step="0.5" id="quietZone" value="4">
+                        </div>
+                        <div class="mb-3">
+                            <label for="fontSize" class="form-label">Font Size: <span id="fontSizeValue" class="badge bg-secondary badge-setting">10</span></label>
+                            <input type="range" class="form-range" min="6" max="36" step="1" id="fontSize" value="10">
+                        </div>
+                        <div class="mb-3">
+                            <label for="textDistance" class="form-label">Text Distance: <span id="textDistanceValue" class="badge bg-secondary badge-setting">5.0</span></label>
+                            <input type="range" class="form-range" min="0" max="20" step="0.5" id="textDistance" value="5">
+                        </div>
+                        <div class="mb-3">
+                            <label for="fontFamily" class="form-label">Font Family</label>
+                            <select class="form-select" id="fontFamily">
+                                <!-- System Fonts -->
+                                <option value="Arial">Arial (System)</option>
+                                <!-- Available Fonts from /fonts directory -->
+                                <option value="Barlow">Barlow</option>
+                                <option value="Courier Prime">Courier Prime</option>
+                                <option value="Fira Code">Fira Code (Monospace)</option>
+                                <option value="Helvetica">Helvetica</option>
+                                <option value="Lato">Lato</option>
+                                <option value="Open Sans">Open Sans</option>
+                                <option value="Times New Roman">Times New Roman</option>
+                                <option value="Typo Round Bold" selected>Typo Round Bold</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="foregroundColor" class="form-label">Foreground Color</label>
+                            <input type="color" class="form-control form-control-color" id="foregroundColor" value="#000000">
+                        </div>
+                        <div class="mb-3">
+                            <label for="backgroundColor" class="form-label">Background Color</label>
+                            <input type="color" class="form-control form-control-color" id="backgroundColor" value="#FFFFFF">
+                        </div>
+
+                        <!-- EAN-13 specific options -->
+                        <div id="ean13Options" class="border-top pt-3" style="display:none;">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="guardBars" checked>
+                                <label class="form-check-label" for="guardBars">Show Guard Bars</label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="guardBarHeight" class="form-label">Guard Bar Height: <span id="guardBarHeightValue" class="badge bg-secondary badge-setting">15.0</span></label>
+                                <input type="range" class="form-range" min="5" max="50" step="1" id="guardBarHeight" value="15">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
@@ -202,6 +188,10 @@
       $('#quietZone').value = '4';
       $('#fontSize').value = '10';
     }
+    // Set default font to Helvetica if not already set
+    if (!$('#fontFamily').value) {
+      $('#fontFamily').value = 'Helvetica';
+    }
     ['moduleWidth','moduleHeight','quietZone','fontSize'].forEach(id => updateRangeLabel(document.getElementById(id)));
   }
 
@@ -213,6 +203,7 @@
       module_height: $('#moduleHeight').value,
       quiet_zone: $('#quietZone').value,
       font_size: $('#fontSize').value,
+      font_family: $('#fontFamily').value,
       text_distance: $('#textDistance').value,
       foreground: $('#foregroundColor').value,
       background: $('#backgroundColor').value,
