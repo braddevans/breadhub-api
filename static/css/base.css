@@ -429,6 +429,7 @@ footer {
     display: flex;
     align-items: center;
     justify-content: center;
+    text-align: center;
     background: var(--bs-body-bg);
     border-radius: .25rem;
     padding: 1.5rem;
@@ -461,10 +462,11 @@ margin-top: 0.5rem;
 
 /* Barcode Image */
 #barcodePreview {
-max-width: 100%;
-max-height: 180px;
-object-fit: contain;
-display: none;
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: none;
 }
 
 /* When barcode is generated */
