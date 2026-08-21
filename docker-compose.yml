@@ -30,8 +30,7 @@ services:
       "--max-requests-jitter", "100",
       "--worker-tmp-dir", "/dev/shm",
       "--log-level", "info",
-      "--access-logfile", "-",
-      "--error-logfile", "-",
+      "--access-logfile", "/dev/null",
       "wsgi:app"
     ]
 

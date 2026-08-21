@@ -55,6 +55,19 @@ def setup_flask_logging(app, level='INFO'):
     werkzeug_logger.addHandler(intercept_handler)
     werkzeug_logger.propagate = False
 
+    # Configure Gunicorn's gunicorn.access and gunicorn.error loggers
+    gunicorn_access_logger = logging.getLogger('gunicorn.access')
+    gunicorn_access_logger.handlers = []
+    gunicorn_access_logger.setLevel(log_level)
+    gunicorn_access_logger.addHandler(intercept_handler)
+    gunicorn_access_logger.propagate = False
+
+    gunicorn_error_logger = logging.getLogger('gunicorn.error')
+    gunicorn_error_logger.handlers = []
+    gunicorn_error_logger.setLevel(log_level)
+    gunicorn_error_logger.addHandler(intercept_handler)
+    gunicorn_error_logger.propagate = False
+
     # Configure root logger to use our handler
     logging.basicConfig(handlers=[intercept_handler], level=0, force=True)
 
