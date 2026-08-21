@@ -27,24 +27,28 @@ def create_app(config_class=Config):
     @app.before_request
     def log_request():
         if request.path != '/favicon.ico':
+            # Skip healthcheck requests (curl from Docker healthcheck)
+            user_agent = request.headers.get('User-Agent', '')
+            if 'curl' in user_agent.lower():
+                return
             # Get real client IP from headers if behind proxy/Docker
             real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
             if ',' in real_ip:
                 real_ip = real_ip.split(',')[0].strip()
-            # Skip logging healthcheck requests from localhost
-            if real_ip not in ('127.0.0.1', '::1', 'localhost'):
-                logger.debug(f"Request: {request.method} {request.path} - {real_ip}")
-    
+            logger.debug(f"Request: {request.method} {request.path} - {real_ip}")
+
     @app.after_request
     def log_response(response):
         if request.path != '/favicon.ico':
+            # Skip healthcheck requests (curl from Docker healthcheck)
+            user_agent = request.headers.get('User-Agent', '')
+            if 'curl' in user_agent.lower():
+                return response
             # Get real client IP from headers if behind proxy/Docker
             real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
             if ',' in real_ip:
                 real_ip = real_ip.split(',')[0].strip()
-            # Skip logging healthcheck requests from localhost
-            if real_ip not in ('127.0.0.1', '::1', 'localhost'):
-                logger.debug(f"Response: {request.method} {request.path} - {response.status_code}")
+            logger.debug(f"Response: {request.method} {request.path} - {response.status_code}")
         return response
     
     # Import routes here to avoid circular imports
