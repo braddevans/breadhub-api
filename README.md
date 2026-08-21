@@ -4,7 +4,7 @@ Flask REST API for generating barcodes in multiple formats.
 
 ## Features
 
-- Multiple barcode formats (EAN-13, Code 128, Code 39, etc.)
+- Code 128 barcode generation
 - Customizable output (PNG, JPEG)
 - Font selection by ID
 - Uppercase text conversion
@@ -48,11 +48,11 @@ GET /barcode?data=<data>&format=<format>&raw=<true/false>
 
 **Parameters:**
 - `data` (required): Data to encode
-- `format`: Barcode format (default: code128)
-  - Supported: code39, ean13, ean8, upca, isbn10, isbn13, issn, pzn, pzn7, gs1_128, jan
+- `type`: Barcode format (default: code128)
+  - Supported: code128
 - `raw`: Return raw PNG if true, JSON if false (default)
 - `uppercase`: Convert text to uppercase if true
-- `font_id`: Numeric ID of font to use
+- `font_family`: Font family to use
 - `module_width`: Width of barcode modules
 - `module_height`: Height of barcode modules
 - `font_size`: Size of text under barcode
@@ -62,7 +62,7 @@ GET /barcode?data=<data>&format=<format>&raw=<true/false>
 
 **Example:**
 ```
-GET /barcode?data=1234567890128&format=ean13&module_width=0.33&font_size=12
+GET /barcode?data=CODE128&type=code128&module_width=0.2&font_size=10
 ```
 
 ### List Available Fonts

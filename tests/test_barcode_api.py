@@ -38,13 +38,13 @@ def test_generate_code128_raw(client):
     assert response.data.startswith(b"\x89PNG")  # PNG header
 
 
-def test_generate_ean13_with_overrides(client):
+def test_generate_code128_with_overrides(client):
     """Should apply URL parameter overrides."""
     response = client.get(
         "/barcode",
         query_string={
-            "data": "123456789012",
-            "type": "ean13",
+            "data": "TEST123",
+            "type": "code128",
             "module_width": "0.6",
             "foreground": "red",
             "uppercase": "true"
