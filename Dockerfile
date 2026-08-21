@@ -27,7 +27,7 @@ EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s \
-    CMD curl -f http://localhost:5000/ || exit 1
+    CMD curl -f -H "X-Healthcheck: true" http://localhost:5000/ || exit 1
 
 # Command to run the application
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--worker-class", "sync", "wsgi:app"]
