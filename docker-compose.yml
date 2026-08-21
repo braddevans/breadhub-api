@@ -10,7 +10,7 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONFAULTHANDLER=1
-      - LOG_LEVEL=DEBUG  # Set log level to DEBUG to capture all logs
+      - LOG_LEVEL=INFO
       - GUNICORN_WORKER_ID=worker-${HOSTNAME}
     volumes:
       # For Windows, use the full path for the volume
@@ -19,19 +19,20 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       # Ensure logs are persisted
       - ./logs:/var/log/breadhub
-    # Use Gunicorn in production with 5 workers
+    # Use Gunicorn with sync workers for CPU-bound barcode generation
     command: [
       "gunicorn",
       "--bind", "0.0.0.0:5000",
-      "--workers", "5",
-      "--threads", "5",
-      "--worker-class", "gthread",
-      "--timeout", "120",
+      "--workers", "4",
+      "--worker-class", "sync",
+      "--timeout", "30",
+      "--keepalive", "2",
+      "--max-requests", "1000",
+      "--max-requests-jitter", "100",
       "--worker-tmp-dir", "/dev/shm",
       "--log-level", "info",
       "--access-logfile", "-",
       "--error-logfile", "-",
-      "--preload",
       "wsgi:app"
     ]
 

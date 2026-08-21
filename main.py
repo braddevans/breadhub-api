@@ -1,10 +1,9 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, request, render_template
 from config import Config
 from logging_config import setup_logging, setup_flask_logging, logger
 from middleware import init_error_handlers
 from routes.pages import init_pages
 import os
-from datetime import datetime
 
 def create_app(config_class=Config):
     # Create the Flask application with absolute path to templates
@@ -24,19 +23,20 @@ def create_app(config_class=Config):
     # Initialize pages
     init_pages(app)
 
-    # Log all requests
+    # Log all requests and responses (skip favicon)
     @app.before_request
     def log_request():
-        if request.path == '/favicon.ico':
-            return
-        logger.info(f"Request: {request.method} {request.path} - {request.remote_addr}")
+        if request.path != '/favicon.ico':
+            # Get real client IP from headers if behind proxy/Docker
+            real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
+            if ',' in real_ip:
+                real_ip = real_ip.split(',')[0].strip()
+            logger.debug(f"Request: {request.method} {request.path} - {real_ip}")
     
-    # Log all responses
     @app.after_request
     def log_response(response):
-        if request.path == '/favicon.ico':
-            return response
-        logger.info(f"Response: {request.method} {request.path} - {response.status_code}")
+        if request.path != '/favicon.ico':
+            logger.debug(f"Response: {request.method} {request.path} - {response.status_code}")
         return response
     
     # Import routes here to avoid circular imports
