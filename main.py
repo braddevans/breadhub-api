@@ -23,7 +23,7 @@ def create_app(config_class=Config):
     # Initialize pages
     init_pages(app)
 
-    # Log all requests and responses (skip favicon)
+    # Log all requests and responses (skip favicon and healthcheck)
     @app.before_request
     def log_request():
         if request.path != '/favicon.ico':
@@ -31,12 +31,20 @@ def create_app(config_class=Config):
             real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
             if ',' in real_ip:
                 real_ip = real_ip.split(',')[0].strip()
-            logger.debug(f"Request: {request.method} {request.path} - {real_ip}")
+            # Skip logging healthcheck requests from localhost
+            if real_ip not in ('127.0.0.1', '::1', 'localhost'):
+                logger.debug(f"Request: {request.method} {request.path} - {real_ip}")
     
     @app.after_request
     def log_response(response):
         if request.path != '/favicon.ico':
-            logger.debug(f"Response: {request.method} {request.path} - {response.status_code}")
+            # Get real client IP from headers if behind proxy/Docker
+            real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
+            if ',' in real_ip:
+                real_ip = real_ip.split(',')[0].strip()
+            # Skip logging healthcheck requests from localhost
+            if real_ip not in ('127.0.0.1', '::1', 'localhost'):
+                logger.debug(f"Response: {request.method} {request.path} - {response.status_code}")
         return response
     
     # Import routes here to avoid circular imports

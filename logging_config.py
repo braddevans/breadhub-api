@@ -35,24 +35,29 @@ def setup_flask_logging(app, level='INFO'):
     # Only configure logging once
     if hasattr(app, '_logging_configured'):
         return
-        
-    # Disable default Flask logging
-    app.logger.handlers = []
-    
+
     # Set the log level
     log_level = level.upper()
-    app.logger.setLevel(log_level)
-    
+
     # Add the intercept handler to Flask's logger
     intercept_handler = InterceptHandler()
+
+    # Configure Flask app logger
+    app.logger.handlers = []
+    app.logger.setLevel(log_level)
     app.logger.addHandler(intercept_handler)
-    
-    # Disable propagation to avoid duplicate logs
     app.logger.propagate = False
-    
+
+    # Configure Werkzeug logger (Flask's development server)
+    werkzeug_logger = logging.getLogger('werkzeug')
+    werkzeug_logger.handlers = []
+    werkzeug_logger.setLevel(log_level)
+    werkzeug_logger.addHandler(intercept_handler)
+    werkzeug_logger.propagate = False
+
     # Configure root logger to use our handler
     logging.basicConfig(handlers=[intercept_handler], level=0, force=True)
-    
+
     # Mark as configured
     app._logging_configured = True
 
