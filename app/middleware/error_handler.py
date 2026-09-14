@@ -1,8 +1,6 @@
 from flask import jsonify, Response
 from datetime import datetime
-from logging import getLogger
-
-logger = getLogger(__name__)
+from app.logging_config import logger
 
 def error_response(message, status_code):
     if status_code < 500:

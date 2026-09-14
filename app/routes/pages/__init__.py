@@ -45,4 +45,9 @@ def init_pages(app):
         """Serve the barcode generator HTML page."""
         return render_template('barcode_generator.html')
 
+    @pages_bp.route('/imagegrid')
+    def image_grid():
+        """Serve the image grid generator HTML page."""
+        return render_template('imagegrid.html')
+
     app.register_blueprint(pages_bp)

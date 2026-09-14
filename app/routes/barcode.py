@@ -6,8 +6,8 @@ from barcode.codex import Code128
 from barcode.writer import ImageWriter
 from flask import Blueprint, request, jsonify, Response
 
-from logging_config import logger
-from middleware import error_response
+from app.logging_config import logger
+from app.middleware import error_response
 
 from . import BaseRoute
 

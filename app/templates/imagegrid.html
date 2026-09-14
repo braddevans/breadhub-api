@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+
+{% block title %}Image Grid Generator - {{ site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    #dropZone {
+        border: 2px dashed var(--bs-border-color);
+        border-radius: 0.5rem;
+        padding: 2rem;
+        text-align: center;
+        transition: border-color 0.2s, background-color 0.2s;
+        cursor: pointer;
+    }
+    #dropZone:hover, #dropZone.dragover {
+        border-color: var(--bs-primary);
+        background-color: var(--bs-secondary-bg);
+    }
+    #fileList {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    .file-item {
+        background-color: var(--bs-card-bg);
+        border: 1px solid var(--bs-border-color);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.5rem;
+    }
+    .file-item img {
+        width: 64px;
+        height: 64px;
+        object-fit: cover;
+        border-radius: 0.25rem;
+    }
+    #resultImage {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="h4 mb-0">Image Grid Generator</h2>
+            </div>
+            <div class="card-body">
+                <form id="gridForm" enctype="multipart/form-data">
+                    <!-- File Upload -->
+                    <div class="mb-4">
+                        <label class="form-label">Upload Images</label>
+                        <div id="dropZone">
+                            <input type="file" id="imageInput" name="images" multiple accept="image/*" class="d-none">
+                            <div class="text-muted">
+                                <i class="bi bi-cloud-upload display-4 mb-3 d-block"></i>
+                                <p class="mb-1">Drag & drop images here or click to browse</p>
+                                <p class="small mb-0">Supports: JPG, PNG, GIF, BMP, TIFF, WebP</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Grid -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="size" class="form-label">Image Size (px)</label>
+                            <input type="number" id="size" name="size" value="512" min="64" max="2048" 
+                                class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gap" class="form-label">Gap (px)</label>
+                            <input type="number" id="gap" name="gap" value="10" min="0" max="100"
+                                class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Background Settings -->
+                    <div class="mb-4">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" id="useGradient" name="use_gradient" class="form-check-input">
+                            <label for="useGradient" class="form-check-label">Use Gradient Background</label>
+                        </div>
+
+                        <!-- Solid Color -->
+                        <div id="solidColorSection">
+                            <label for="bg_color" class="form-label">Background Color</label>
+                            <div class="input-group">
+                                <input type="color" id="bg_color_picker" name="bg_color_picker" value="#ffffff" 
+                                    class="form-control form-control-color" style="width: 50px;">
+                                <input type="text" id="bg_color" name="bg_color" value="#ffffff" placeholder="#ffffff or 255,255,255"
+                                    class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Gradient Settings -->
+                        <div id="gradientSection" class="d-none">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="gradientStart" class="form-label">Start Color</label>
+                                    <div class="input-group">
+                                        <input type="color" id="gradientStartPicker" name="gradientStartPicker" value="#ffffff"
+                                            class="form-control form-control-color" style="width: 50px;">
+                                        <input type="text" id="gradientStart" name="gradient_start" value="#ffffff" placeholder="#ffffff"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="gradientEnd" class="form-label">End Color</label>
+                                    <div class="input-group">
+                                        <input type="color" id="gradientEndPicker" name="gradientEndPicker" value="#000000"
+                                            class="form-control form-control-color" style="width: 50px;">
+                                        <input type="text" id="gradientEnd" name="gradient_end" value="#000000" placeholder="#000000"
+                                            class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="gradient_direction" class="form-label">Gradient Direction</label>
+                                <select id="gradient_direction" name="gradient_direction" class="form-select">
+                                    <option value="horizontal">Horizontal</option>
+                                    <option value="vertical">Vertical</option>
+                                    <option value="diagonal">Diagonal</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="generateBtn"
+                        class="btn btn-primary w-100">
+                        Generate Grid
+                    </button>
+                </form>
+
+                <!-- Result Section -->
+                <div id="resultSection" class="mt-4 d-none">
+                    <h3 class="h5 mb-3">Generated Grid</h3>
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <img id="resultImage" alt="Generated Grid">
+                        </div>
+                    </div>
+                    <a id="downloadLink" href="#" download="grid.png"
+                        class="btn btn-success w-100 mt-3">
+                        Download PNG
+                    </a>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorSection" class="mt-4 d-none">
+                    <div class="alert alert-danger">
+                        <p id="errorMessage" class="mb-0"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: File List -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="h5 mb-0">Uploaded Images</h3>
+            </div>
+            <div class="card-body">
+                <div id="fileList"></div>
+                <p id="noFiles" class="text-muted text-center py-4 mb-0">No images uploaded yet</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const imageInput = document.getElementById('imageInput');
+const fileList = document.getElementById('fileList');
+const useGradient = document.getElementById('useGradient');
+const solidColorSection = document.getElementById('solidColorSection');
+const gradientSection = document.getElementById('gradientSection');
+const form = document.getElementById('gridForm');
+const generateBtn = document.getElementById('generateBtn');
+const resultSection = document.getElementById('resultSection');
+const resultImage = document.getElementById('resultImage');
+const downloadLink = document.getElementById('downloadLink');
+const errorSection = document.getElementById('errorSection');
+const errorMessage = document.getElementById('errorMessage');
+
+let selectedFiles = [];
+
+// Cookie functions
+function setCookie(name, value, days = 30) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+}
+
+function getCookie(name) {
+    const nameEQ = name + '=';
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i];
+        while (cookie.charAt(0) === ' ') {
+            cookie = cookie.substring(1, cookie.length);
+        }
+        if (cookie.indexOf(nameEQ) === 0) {
+            return cookie.substring(nameEQ.length, cookie.length);
+        }
+    }
+    return null;
+}
+
+function loadSettings() {
+    const size = getCookie('grid_size');
+    const gap = getCookie('grid_gap');
+    const bgColor = getCookie('bg_color');
+    const useGradientCookie = getCookie('use_gradient');
+    const gradientStart = getCookie('gradient_start');
+    const gradientEnd = getCookie('gradient_end');
+    const gradientDirection = getCookie('gradient_direction');
+
+    if (size) document.querySelector('[name="size"]').value = size;
+    if (gap) document.querySelector('[name="gap"]').value = gap;
+    if (bgColor) {
+        document.querySelector('[name="bg_color"]').value = bgColor;
+        document.querySelector('[name="bg_color_picker"]').value = bgColor;
+    }
+    if (useGradientCookie === 'true') {
+        document.getElementById('useGradient').checked = true;
+        solidColorSection.classList.add('d-none');
+        gradientSection.classList.remove('d-none');
+    }
+    if (gradientStart) {
+        document.getElementById('gradientStart').value = gradientStart;
+        document.getElementById('gradientStartPicker').value = gradientStart;
+    }
+    if (gradientEnd) {
+        document.getElementById('gradientEnd').value = gradientEnd;
+        document.getElementById('gradientEndPicker').value = gradientEnd;
+    }
+    if (gradientDirection) {
+        document.querySelector('[name="gradient_direction"]').value = gradientDirection;
+    }
+}
+
+function saveSettings() {
+    setCookie('grid_size', document.querySelector('[name="size"]').value);
+    setCookie('grid_gap', document.querySelector('[name="gap"]').value);
+    setCookie('bg_color', document.querySelector('[name="bg_color"]').value);
+    setCookie('use_gradient', document.getElementById('useGradient').checked);
+    setCookie('gradient_start', document.getElementById('gradientStart').value);
+    setCookie('gradient_end', document.getElementById('gradientEnd').value);
+    setCookie('gradient_direction', document.querySelector('[name="gradient_direction"]').value);
+}
+
+// Load settings on page load
+loadSettings();
+
+// Color picker sync and save settings
+document.querySelector('[name="bg_color_picker"]').addEventListener('input', (e) => {
+    document.querySelector('[name="bg_color"]').value = e.target.value;
+    saveSettings();
+});
+document.querySelector('[name="bg_color"]').addEventListener('input', (e) => {
+    if (e.target.value.startsWith('#')) {
+        document.querySelector('[name="bg_color_picker"]').value = e.target.value;
+    }
+    saveSettings();
+});
+
+document.getElementById('gradientStartPicker').addEventListener('input', (e) => {
+    document.getElementById('gradientStart').value = e.target.value;
+    saveSettings();
+});
+document.getElementById('gradientStart').addEventListener('input', (e) => {
+    if (e.target.value.startsWith('#')) {
+        document.getElementById('gradientStartPicker').value = e.target.value;
+    }
+    saveSettings();
+});
+
+document.getElementById('gradientEndPicker').addEventListener('input', (e) => {
+    document.getElementById('gradientEnd').value = e.target.value;
+    saveSettings();
+});
+document.getElementById('gradientEnd').addEventListener('input', (e) => {
+    if (e.target.value.startsWith('#')) {
+        document.getElementById('gradientEndPicker').value = e.target.value;
+    }
+    saveSettings();
+});
+
+// Toggle gradient section
+useGradient.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        solidColorSection.classList.add('d-none');
+        gradientSection.classList.remove('d-none');
+    } else {
+        solidColorSection.classList.remove('d-none');
+        gradientSection.classList.add('d-none');
+    }
+    saveSettings();
+});
+
+// Save settings on other inputs
+document.querySelector('[name="size"]').addEventListener('input', saveSettings);
+document.querySelector('[name="gap"]').addEventListener('input', saveSettings);
+document.querySelector('[name="gradient_direction"]').addEventListener('change', saveSettings);
+
+// Drag and drop
+dropZone.addEventListener('click', () => imageInput.click());
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('dragover');
+});
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+});
+imageInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+function handleFiles(files) {
+    selectedFiles = Array.from(files);
+    updateFileList();
+}
+
+function updateFileList() {
+    fileList.innerHTML = '';
+    const noFiles = document.getElementById('noFiles');
+
+    if (selectedFiles.length === 0) {
+        noFiles.classList.remove('d-none');
+        return;
+    }
+
+    noFiles.classList.add('d-none');
+
+    selectedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = function() {
+                const dimensions = `${this.width}x${this.height}`;
+                const fileSize = formatFileSize(file.size);
+
+                const div = document.createElement('div');
+                div.className = 'file-item';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="${file.name}">
+                    <div class="flex-1 min-w-0">
+                        <p class="small fw-medium text-truncate" title="${file.name}">${file.name}</p>
+                        <p class="small text-muted mb-0">${dimensions}</p>
+                        <p class="small text-muted mb-0">${fileSize}</p>
+                    </div>
+                    <button type="button" onclick="removeFile(${index})" 
+                        class="btn btn-sm btn-danger">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                `;
+                fileList.appendChild(div);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function removeFile(index) {
+    selectedFiles.splice(index, 1);
+    updateFileList();
+}
+
+// Form submission
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (selectedFiles.length === 0) {
+        showError('Please select at least one image');
+        return;
+    }
+
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
+    resultSection.classList.add('d-none');
+    errorSection.classList.add('d-none');
+
+    const formData = new FormData();
+    selectedFiles.forEach(file => formData.append('images', file));
+    formData.append('gap', document.querySelector('[name="gap"]').value);
+    formData.append('size', document.querySelector('[name="size"]').value);
+    formData.append('bg_color', document.querySelector('[name="bg_color"]').value);
+    formData.append('use_gradient', useGradient.checked);
+    formData.append('gradient_start', document.querySelector('[name="gradient_start"]').value);
+    formData.append('gradient_end', document.querySelector('[name="gradient_end"]').value);
+    formData.append('gradient_direction', document.querySelector('[name="gradient_direction"]').value);
+
+    try {
+        const response = await fetch('/api/imagegrid/generate', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to generate grid');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        resultImage.src = url;
+        downloadLink.href = url;
+        resultSection.classList.remove('d-none');
+
+        showToast('Grid generated successfully!');
+    } catch (error) {
+        showError(error.message);
+    } finally {
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate Grid';
+    }
+});
+
+function showError(message) {
+    errorMessage.textContent = message;
+    errorSection.classList.remove('d-none');
+}
+</script>
+{% endblock %}

@@ -62,7 +62,7 @@ body {
     flex-direction: column;
     margin: 0;
     padding: 0;
-    background: linear-gradient(135deg, var(--bs-body-bg) 0%, #f0f4f8 50%, #e6f0f9 100%) fixed;
+    background: linear-gradient(135deg, var(--bs-body-bg) 0%, #f0f4f8 50%, #e6f0f9 100%);
     background-attachment: fixed;
     color: var(--bs-body-color);
 }
@@ -245,26 +245,6 @@ body {
     box-shadow: 0 0 0 1px var(--bs-body-bg), 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
-/* Theme-specific overrides */
-[data-bs-theme="light"] {
-    --bs-body-bg: #f0f2f5;
-    --bs-card-bg: #ffffff;
-    --bs-dark-bg-subtle: #e5e7eb;
-    --bs-form-control-bg: #ffffff;
-    --bs-form-control-color: #1f2937;
-    --bs-form-control-border: #d1d5db;
-    --bs-form-control-focus: #9ca3af;
-}
-
-[data-bs-theme="dark"] {
-    --bs-body-bg: #212529;
-    --bs-card-bg: #2c3034;
-    --bs-dark-bg-subtle: #1a1d20;
-    --bs-form-control-bg: #2c3034;
-    --bs-form-control-color: #f8f9fa;
-    --bs-form-control-border: #495057;
-    --bs-form-control-focus: #6f42c1;
-}
 
 /* Status Messages */
 .status-message {
@@ -399,7 +379,9 @@ display: block;
 }
 
 #barcodePreviewContainer:not(.has-barcode) #barcodePreview {
-display: none;
+    display: none;
+}
+
 .sticky-top {
     top: 1rem;
 }
