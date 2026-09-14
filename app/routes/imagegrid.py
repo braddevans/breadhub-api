@@ -1,11 +1,18 @@
 import io
 from PIL import Image, ImageDraw
-from flask import Blueprint, request, send_file, jsonify, render_template
+from flask import request, send_file, render_template
 
 from app.logging_config import logger
 from app.middleware import error_response
 
 from . import BaseRoute
+
+# Inclusive bounds for caller-supplied grid geometry. Without these, a single
+# request can ask Pillow for a multi-gigapixel canvas.
+SIZE_LIMITS = (16, 2048)
+GAP_LIMITS = (0, 512)
+MAX_IMAGES = 100
+MAX_OUTPUT_PIXELS = 50_000_000
 
 
 class ImageGridAPI(BaseRoute):
@@ -39,6 +46,14 @@ class ImageGridAPI(BaseRoute):
             return tuple(map(int, color_str.split(',')))
         except ValueError:
             raise ValueError(f"Invalid color format: {color_str}. Use hex (#ffffff) or RGB (255,255,255)")
+
+    @staticmethod
+    def _grid_dimension(num_images):
+        """Side length of the smallest square grid that fits num_images."""
+        grid_dim = int(num_images ** 0.5)
+        if grid_dim * grid_dim < num_images:
+            grid_dim += 1  # Round up to make room for all images
+        return grid_dim
 
     @staticmethod
     def _interpolate_color(start_color, end_color, ratio):
@@ -75,8 +90,7 @@ class ImageGridAPI(BaseRoute):
 
         return image
 
-    @staticmethod
-    def create_grid(images, gap=10, background_color=(255, 255, 255), gradient=None):
+    def create_grid(self, images, gap=10, background_color=(255, 255, 255), gradient=None):
         """Create a square grid from resized images with specified gap and background."""
         if not images:
             raise ValueError("No images provided")
@@ -85,10 +99,7 @@ class ImageGridAPI(BaseRoute):
         img_width, img_height = img_size
 
         # Calculate grid dimensions (ensure square output)
-        num_images = len(images)
-        grid_dim = int(num_images ** 0.5)
-        if grid_dim * grid_dim < num_images:
-            grid_dim += 1  # Round up to make room for all images
+        grid_dim = self._grid_dimension(len(images))
 
         # Calculate total grid dimensions (square)
         grid_width = grid_dim * img_width + (grid_dim - 1) * gap
@@ -117,12 +128,28 @@ class ImageGridAPI(BaseRoute):
         """Serve the image grid generator HTML page."""
         return render_template('imagegrid.html')
 
+    @staticmethod
+    def _bounded_int(name, raw, default, limits):
+        """Parse an integer form field, rejecting junk and out-of-range values."""
+        if raw is None or raw == '':
+            return default
+
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            raise ValueError(f"{name} must be a whole number, got {raw!r}")
+
+        low, high = limits
+        if not low <= value <= high:
+            raise ValueError(f"{name} must be between {low} and {high}, got {value}")
+        return value
+
     def generate_grid(self):
         """Generate an image grid from uploaded files."""
         try:
             # Get form data
-            gap = int(request.form.get('gap', 10))
-            size = int(request.form.get('size', 512))
+            gap = self._bounded_int('gap', request.form.get('gap'), 10, GAP_LIMITS)
+            size = self._bounded_int('size', request.form.get('size'), 512, SIZE_LIMITS)
             bg_color = request.form.get('bg_color', '#ffffff')
             use_gradient = request.form.get('use_gradient') == 'true'
             gradient_start = request.form.get('gradient_start', '#ffffff')
@@ -143,6 +170,23 @@ class ImageGridAPI(BaseRoute):
             files = request.files.getlist('images')
             if not files or all(f.filename == '' for f in files):
                 return error_response('No images uploaded', 400)
+
+            named_files = [f for f in files if f.filename]
+            if len(named_files) > MAX_IMAGES:
+                return error_response(
+                    f'Too many images: {len(named_files)} (max {MAX_IMAGES})', 400
+                )
+
+            # Reject a grid that would allocate an unreasonable canvas before
+            # any decoding work happens.
+            grid_dim = self._grid_dimension(len(named_files))
+            output_pixels = (grid_dim * size + (grid_dim - 1) * gap) ** 2
+            if output_pixels > MAX_OUTPUT_PIXELS:
+                return error_response(
+                    f'Requested grid is too large ({output_pixels:,} pixels, '
+                    f'max {MAX_OUTPUT_PIXELS:,}). Reduce size or image count.',
+                    400
+                )
 
             # Process images
             resized_images = []
@@ -167,10 +211,20 @@ class ImageGridAPI(BaseRoute):
 
             return send_file(img_io, mimetype='image/png', as_attachment=False)
 
+        except ValueError as e:
+            # Bad geometry, unparseable colours and undecodable uploads are all
+            # caller errors rather than server faults.
+            logger.warning("Rejected image grid request: {}", e)
+            return error_response(str(e), 400)
         except Exception as e:
-            logger.error(f"Error generating image grid: {str(e)}", exc_info=True)
+            logger.exception("Error generating image grid: {}", e)
             return error_response(str(e), 500)
 
 
 # Create and export the blueprint
 imagegrid_bp, url_prefix = ImageGridAPI.create()
+
+
+def create_blueprint():
+    """Entry point used by app.routes.init_app to register this module."""
+    return imagegrid_bp, url_prefix

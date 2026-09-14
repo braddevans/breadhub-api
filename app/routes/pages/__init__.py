@@ -40,6 +40,11 @@ def init_pages(app):
             'site_tld': tld
         }
         
+    @pages_bp.route('/')
+    def index():
+        """Serve the landing page."""
+        return render_template('index.html')
+
     @pages_bp.route('/generator')
     def barcode_generator():
         """Serve the barcode generator HTML page."""
