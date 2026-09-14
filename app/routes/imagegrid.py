@@ -1,6 +1,7 @@
 import io
-from PIL import Image, ImageDraw
+from PIL import Image, UnidentifiedImageError
 from flask import request, send_file, render_template
+from werkzeug.exceptions import HTTPException
 
 from app.logging_config import logger
 from app.middleware import error_response
@@ -13,6 +14,15 @@ SIZE_LIMITS = (16, 2048)
 GAP_LIMITS = (0, 512)
 MAX_IMAGES = 100
 MAX_OUTPUT_PIXELS = 50_000_000
+
+# Largest source image accepted, checked from the header before decoding so a
+# small 'decompression bomb' file cannot expand into hundreds of MB of pixels.
+MAX_INPUT_PIXELS = 40_000_000
+
+GRADIENT_DIRECTIONS = {'horizontal', 'vertical', 'diagonal'}
+
+# Resolution the gradient is interpolated at before being upscaled.
+GRADIENT_STEPS = 256
 
 
 class ImageGridAPI(BaseRoute):
@@ -30,6 +40,9 @@ class ImageGridAPI(BaseRoute):
     def parse_color(color_str):
         """Parse color string as hex code or RGB tuple."""
         color_str = color_str.strip()
+        invalid = ValueError(
+            f"Invalid color format: {color_str}. Use hex (#ffffff) or RGB (255,255,255)"
+        )
 
         # Check if hex code
         if color_str.startswith('#'):
@@ -39,13 +52,26 @@ class ImageGridAPI(BaseRoute):
                 hex_code = ''.join([c * 2 for c in hex_code])
             if len(hex_code) != 6:
                 raise ValueError(f"Invalid hex color: {color_str}")
-            return tuple(int(hex_code[i:i+2], 16) for i in (0, 2, 4))
+            try:
+                return tuple(int(hex_code[i:i + 2], 16) for i in (0, 2, 4))
+            except ValueError:
+                raise ValueError(f"Invalid hex color: {color_str}")
 
         # Parse as RGB tuple
+        parts = color_str.split(',')
+        if len(parts) != 3:
+            raise invalid
+
         try:
-            return tuple(map(int, color_str.split(',')))
+            channels = tuple(int(part) for part in parts)
         except ValueError:
-            raise ValueError(f"Invalid color format: {color_str}. Use hex (#ffffff) or RGB (255,255,255)")
+            raise invalid
+
+        if any(not 0 <= channel <= 255 for channel in channels):
+            raise ValueError(
+                f"Invalid color format: {color_str}. RGB channels must be 0-255"
+            )
+        return channels
 
     @staticmethod
     def _grid_dimension(num_images):
@@ -65,30 +91,40 @@ class ImageGridAPI(BaseRoute):
 
     @staticmethod
     def create_gradient_background(width, height, start_color, end_color, direction='horizontal'):
-        """Create a gradient background image."""
-        image = Image.new('RGB', (width, height))
-        draw = ImageDraw.Draw(image)
+        """
+        Create a gradient background image.
+
+        The gradient is built once at low resolution and upscaled by Pillow,
+        rather than interpolated per pixel in Python. The visual result is the
+        same, but a full-size diagonal gradient drops from seconds of CPU to
+        milliseconds.
+        """
+        if direction not in GRADIENT_DIRECTIONS:
+            raise ValueError(
+                f"Unknown gradient_direction: {direction}. "
+                f"Supported: {', '.join(sorted(GRADIENT_DIRECTIONS))}"
+            )
+
+        steps = GRADIENT_STEPS
+        span = steps - 1
 
         if direction == 'horizontal':
-            for x in range(width):
-                ratio = x / width
-                color = ImageGridAPI._interpolate_color(start_color, end_color, ratio)
-                draw.line([(x, 0), (x, height)], fill=color)
+            small_size = (steps, 1)
+            ratios = (x / span for x in range(steps))
         elif direction == 'vertical':
-            for y in range(height):
-                ratio = y / height
-                color = ImageGridAPI._interpolate_color(start_color, end_color, ratio)
-                draw.line([(0, y), (width, y)], fill=color)
-        elif direction == 'diagonal':
-            for i in range(width + height):
-                ratio = i / (width + height)
-                color = ImageGridAPI._interpolate_color(start_color, end_color, ratio)
-                for x in range(max(0, i - height), min(width, i)):
-                    y = i - x
-                    if 0 <= y < height:
-                        draw.point((x, y), fill=color)
+            small_size = (1, steps)
+            ratios = (y / span for y in range(steps))
+        else:  # diagonal
+            small_size = (steps, steps)
+            ratios = ((x + y) / (2 * span) for y in range(steps) for x in range(steps))
 
-        return image
+        small = Image.new('RGB', small_size)
+        small.putdata([
+            ImageGridAPI._interpolate_color(start_color, end_color, ratio)
+            for ratio in ratios
+        ])
+
+        return small.resize((width, height), Image.Resampling.BILINEAR)
 
     def create_grid(self, images, gap=10, background_color=(255, 255, 255), gradient=None):
         """Create a square grid from resized images with specified gap and background."""
@@ -154,10 +190,15 @@ class ImageGridAPI(BaseRoute):
             use_gradient = request.form.get('use_gradient') == 'true'
             gradient_start = request.form.get('gradient_start', '#ffffff')
             gradient_end = request.form.get('gradient_end', '#000000')
-            gradient_direction = request.form.get('gradient_direction', 'horizontal')
+            gradient_direction = request.form.get('gradient_direction', 'horizontal').strip().lower()
 
             # Parse background color
             if use_gradient:
+                if gradient_direction not in GRADIENT_DIRECTIONS:
+                    raise ValueError(
+                        f"Unknown gradient_direction: {gradient_direction}. "
+                        f"Supported: {', '.join(sorted(GRADIENT_DIRECTIONS))}"
+                    )
                 start_color = self.parse_color(gradient_start)
                 end_color = self.parse_color(gradient_end)
                 gradient = (start_color, end_color, gradient_direction)
@@ -190,13 +231,24 @@ class ImageGridAPI(BaseRoute):
 
             # Process images
             resized_images = []
-            for file in files:
-                if file.filename:
+            for file in named_files:
+                try:
                     img = Image.open(file.stream)
-                    if img.mode != 'RGB':
-                        img = img.convert('RGB')
-                    resized = img.resize((size, size), Image.Resampling.LANCZOS)
-                    resized_images.append(resized)
+                except UnidentifiedImageError:
+                    raise ValueError(f"{file.filename} is not a readable image")
+
+                # Image.open only reads the header, so the dimensions can be
+                # vetted before committing memory to a full decode.
+                if img.size[0] * img.size[1] > MAX_INPUT_PIXELS:
+                    raise ValueError(
+                        f"{file.filename} is too large "
+                        f"({img.size[0]}x{img.size[1]}, max {MAX_INPUT_PIXELS:,} pixels)"
+                    )
+
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                resized = img.resize((size, size), Image.Resampling.LANCZOS)
+                resized_images.append(resized)
 
             if not resized_images:
                 return error_response('No valid images processed', 400)
@@ -211,6 +263,10 @@ class ImageGridAPI(BaseRoute):
 
             return send_file(img_io, mimetype='image/png', as_attachment=False)
 
+        except HTTPException:
+            # Reading request.form/files parses the body, which raises 413 when
+            # it exceeds MAX_CONTENT_LENGTH. Let Flask report those as-is.
+            raise
         except ValueError as e:
             # Bad geometry, unparseable colours and undecodable uploads are all
             # caller errors rather than server faults.

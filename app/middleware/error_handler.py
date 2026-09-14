@@ -1,5 +1,6 @@
-from flask import jsonify, Response
+from flask import jsonify
 from datetime import datetime
+from werkzeug.exceptions import HTTPException
 from app.logging_config import logger
 
 def error_response(message, status_code):
@@ -37,5 +38,10 @@ def init_error_handlers(app):
     
     @app.errorhandler(Exception)
     def handle_unexpected_error(error):
+        # Without this, any HTTPException lacking its own handler (413, 415,
+        # 429, ...) would be reported as a 500.
+        if isinstance(error, HTTPException):
+            return error_response(error.description, error.code or 500)
+
         logger.exception("Unexpected error occurred")
         return error_response('An unexpected error occurred', 500)

@@ -3,44 +3,125 @@
 {% block title %}Home - {{ super() }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-lg-8 text-center">
-        <h1 class="display-4 mb-4">Welcome to {{ site_name }}</h1>
-        
-        <div class="row g-4 mt-5">
-            <div class="col-md-6">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="text-primary mb-3">
-                            <i class="bi bi-upc-scan" style="font-size: 2.5rem;"></i>
-                        </div>
-                        <h3>Barcode Generator</h3>
-                        <p>Generate and customize Code 128 barcodes.</p>
-                        <a href="{{ url_for('pages.barcode_generator') }}" class="btn btn-primary">
-                            Try Barcode Generator
-                        </a>
+<section class="hero text-center">
+    <span class="hero-eyebrow">
+        <i class="bi bi-lightning-charge-fill" aria-hidden="true"></i> Image generation APIs
+    </span>
+    <h1 class="hero-title display-3">
+        Welcome to <span class="accent">{{ site_name }}</span>
+    </h1>
+    <p class="hero-lead">
+        Generate scannable Code&nbsp;128 barcodes and colour grid images straight from a URL.
+        Tune everything in the browser, then copy the request and drop it into your own app.
+    </p>
+    <div class="hero-actions">
+        <a href="{{ url_for('pages.barcode_generator') }}" class="btn btn-primary btn-lg">
+            <i class="bi bi-upc-scan me-1" aria-hidden="true"></i> Generate a barcode
+        </a>
+        <a href="#api" class="btn btn-outline-secondary btn-lg">
+            <i class="bi bi-code-slash me-1" aria-hidden="true"></i> View the API
+        </a>
+    </div>
+</section>
+
+<section class="row g-4 mt-5 justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <article class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon" aria-hidden="true"><i class="bi bi-upc-scan"></i></div>
+                <h3>Barcode Generator</h3>
+                <p>
+                    Code&nbsp;128 barcodes with live preview. Adjust module size, quiet zone,
+                    caption font and colours, then export at up to 1200&nbsp;DPI.
+                </p>
+                <ul class="feature-meta">
+                    <li>PNG / JPEG / GIF / BMP / TIFF</li>
+                    <li>Bundled fonts</li>
+                    <li>Base64 or raw image</li>
+                </ul>
+                <a href="{{ url_for('pages.barcode_generator') }}" class="btn btn-primary">
+                    Open generator <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                </a>
+            </div>
+        </article>
+    </div>
+    <div class="col-md-6 col-lg-5">
+        <article class="card feature-card">
+            <div class="card-body">
+                <div class="feature-icon" aria-hidden="true"><i class="bi bi-grid-3x3"></i></div>
+                <h3>Image Grid</h3>
+                <p>
+                    Build gradient colour grids at any dimension - handy for test assets,
+                    placeholders and calibration sheets.
+                </p>
+                <ul class="feature-meta">
+                    <li>Custom grid size</li>
+                    <li>Interpolated colours</li>
+                    <li>Instant download</li>
+                </ul>
+                <a href="{{ url_for('pages.image_grid') }}" class="btn btn-primary">
+                    Open image grid <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i>
+                </a>
+            </div>
+        </article>
+    </div>
+</section>
+
+<section id="api" class="row justify-content-center mt-5">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="h4 mb-1">
+                    <i class="bi bi-code-slash me-2 text-primary" aria-hidden="true"></i>API endpoints
+                </h2>
+                <p class="text-muted">Every page above is just a front end for these routes.</p>
+                <div class="endpoint-list">
+                    <div class="endpoint">
+                        <span class="method">GET</span>
+                        <code class="path">/api/barcode?data=HELLO</code>
+                        <span class="desc">JSON with a base64 barcode, or <code>&amp;raw=true</code> for the image</span>
                     </div>
+                    <div class="endpoint">
+                        <span class="method">GET</span>
+                        <code class="path">/api/barcode/writer-options</code>
+                        <span class="desc">Default writer options and supported image formats</span>
+                    </div>
+                    <div class="endpoint">
+                        <span class="method">POST</span>
+                        <code class="path">/api/imagegrid/generate</code>
+                        <span class="desc">Render a colour grid image</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{{ url_for('api.barcode.generate_barcode') }}?data=BREADHUB&amp;raw=true" target="_blank"
+                       rel="noopener">
+                        <i class="bi bi-box-arrow-up-right me-1" aria-hidden="true"></i> Try a sample barcode
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary"
+                       href="{{ url_for('api.barcode.list_all_writer_options') }}" target="_blank" rel="noopener">
+                        <i class="bi bi-sliders me-1" aria-hidden="true"></i> Inspect writer options
+                    </a>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Add any page-specific JavaScript here
-    document.addEventListener('DOMContentLoaded', function() {
-        // Example: Add smooth scrolling to anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
+    // Smooth-scroll the in-page anchors (the "View the API" button).
+    document.addEventListener('DOMContentLoaded', function () {
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        document.querySelectorAll('a[href^="#"]:not([href="#"])').forEach(function (anchor) {
+            anchor.addEventListener('click', function (e) {
                 const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth'
-                    });
+                if (!target) {
+                    return;
                 }
+                e.preventDefault();
+                target.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
             });
         });
     });
