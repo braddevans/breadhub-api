@@ -1,6 +1,6 @@
 import io
 from PIL import Image, ImageDraw
-from flask import Blueprint, request, send_file, jsonify
+from flask import Blueprint, request, send_file, jsonify, render_template
 
 from app.logging_config import logger
 from app.middleware import error_response
@@ -41,6 +41,14 @@ class ImageGridAPI(BaseRoute):
             raise ValueError(f"Invalid color format: {color_str}. Use hex (#ffffff) or RGB (255,255,255)")
 
     @staticmethod
+    def _interpolate_color(start_color, end_color, ratio):
+        """Interpolate between two RGB colors based on ratio."""
+        return tuple(
+            int(start_color[i] + (end_color[i] - start_color[i]) * ratio)
+            for i in range(3)
+        )
+
+    @staticmethod
     def create_gradient_background(width, height, start_color, end_color, direction='horizontal'):
         """Create a gradient background image."""
         image = Image.new('RGB', (width, height))
@@ -49,28 +57,21 @@ class ImageGridAPI(BaseRoute):
         if direction == 'horizontal':
             for x in range(width):
                 ratio = x / width
-                r = int(start_color[0] + (end_color[0] - start_color[0]) * ratio)
-                g = int(start_color[1] + (end_color[1] - start_color[1]) * ratio)
-                b = int(start_color[2] + (end_color[2] - start_color[2]) * ratio)
-                draw.line([(x, 0), (x, height)], fill=(r, g, b))
+                color = ImageGridAPI._interpolate_color(start_color, end_color, ratio)
+                draw.line([(x, 0), (x, height)], fill=color)
         elif direction == 'vertical':
             for y in range(height):
                 ratio = y / height
-                r = int(start_color[0] + (end_color[0] - start_color[0]) * ratio)
-                g = int(start_color[1] + (end_color[1] - start_color[1]) * ratio)
-                b = int(start_color[2] + (end_color[2] - start_color[2]) * ratio)
-                draw.line([(0, y), (width, y)], fill=(r, g, b))
+                color = ImageGridAPI._interpolate_color(start_color, end_color, ratio)
+                draw.line([(0, y), (width, y)], fill=color)
         elif direction == 'diagonal':
             for i in range(width + height):
                 ratio = i / (width + height)
-                r = int(start_color[0] + (end_color[0] - start_color[0]) * ratio)
-                g = int(start_color[1] + (end_color[1] - start_color[1]) * ratio)
-                b = int(start_color[2] + (end_color[2] - start_color[2]) * ratio)
-                # Draw diagonal lines
+                color = ImageGridAPI._interpolate_color(start_color, end_color, ratio)
                 for x in range(max(0, i - height), min(width, i)):
                     y = i - x
                     if 0 <= y < height:
-                        draw.point((x, y), fill=(r, g, b))
+                        draw.point((x, y), fill=color)
 
         return image
 
@@ -89,24 +90,21 @@ class ImageGridAPI(BaseRoute):
         if grid_dim * grid_dim < num_images:
             grid_dim += 1  # Round up to make room for all images
 
-        cols = grid_dim
-        rows = grid_dim
-
         # Calculate total grid dimensions (square)
-        grid_width = cols * img_width + (cols - 1) * gap
-        grid_height = rows * img_height + (rows - 1) * gap
+        grid_width = grid_dim * img_width + (grid_dim - 1) * gap
+        grid_height = grid_dim * img_height + (grid_dim - 1) * gap
 
         # Create background
         if gradient:
             start_color, end_color, direction = gradient
-            grid = ImageGridAPI.create_gradient_background(grid_width, grid_height, start_color, end_color, direction)
+            grid = self.create_gradient_background(grid_width, grid_height, start_color, end_color, direction)
         else:
             grid = Image.new('RGB', (grid_width, grid_height), background_color)
 
         # Paste images onto grid
         for idx, img in enumerate(images):
-            row = idx // cols
-            col = idx % cols
+            row = idx // grid_dim
+            col = idx % grid_dim
 
             x = col * (img_width + gap)
             y = row * (img_height + gap)
@@ -117,7 +115,6 @@ class ImageGridAPI(BaseRoute):
 
     def imagegrid_page(self):
         """Serve the image grid generator HTML page."""
-        from flask import render_template
         return render_template('imagegrid.html')
 
     def generate_grid(self):
