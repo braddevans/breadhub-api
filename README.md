@@ -176,3 +176,7 @@ MIT License - see LICENSE file for details
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## AI Assistance
+
+This project's documentation & commit messages used some assistance from AI tools for better organization and clarity.
