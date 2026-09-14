@@ -1,7 +1,7 @@
 import base64
 import pytest
 from flask import Flask
-from routes.barcode import barcode_bp, url_prefix
+from app.routes.barcode import barcode_bp, url_prefix
 
 
 @pytest.fixture

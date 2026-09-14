@@ -3,12 +3,11 @@ import sys
 from pathlib import Path
 from flask import Blueprint
 from loguru import logger
-from typing import Optional, Type, TypeVar, Any
+from typing import Optional, Type
 
 # Create main API blueprint
 api_bp = Blueprint('api', __name__)
 
-T = TypeVar('T', bound='BaseRoute')
 
 class BaseRoute:
     """Base class for all route modules that provides common blueprint setup."""
@@ -31,7 +30,7 @@ class BaseRoute:
         raise NotImplementedError("Subclasses must implement _register_routes")
     
     @classmethod
-    def create(cls: Type[T], *args: Any, **kwargs: Any) -> tuple[Blueprint, str]:
+    def create(cls: Type['BaseRoute'], *args, **kwargs) -> tuple[Blueprint, str]:
         """
         Create a new route instance and return its blueprint and URL prefix.
         
@@ -59,7 +58,7 @@ def init_app(app):
             
         try:
             # Import the module
-            module_name = f'routes.{module_file.stem}'
+            module_name = f'app.routes.{module_file.stem}'
             if module_name in sys.modules:
                 module = importlib.reload(sys.modules[module_name])
             else:
@@ -73,12 +72,6 @@ def init_app(app):
                     logger.info("Registered blueprint: {} at /api{}", module_name, url_prefix)
                 except Exception as e:
                     logger.error("Failed to create blueprint for {}: {}", module_name, e)
-            # Backward compatibility with old-style modules
-            elif hasattr(module, 'barcode_bp') and hasattr(module, 'url_prefix'):
-                if not hasattr(module, '_blueprint_registered'):
-                    api_bp.register_blueprint(module.barcode_bp, url_prefix=module.url_prefix)
-                    module._blueprint_registered = True
-                    logger.info("Legacy - Registered blueprint: {} at /api{}", module_name, module.url_prefix)
                 
         except Exception as e:
             logger.error("Error importing {}: {}", module_file.stem, e)

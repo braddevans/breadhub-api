@@ -1,13 +1,13 @@
 from flask import Flask, request, render_template
-from config import Config
-from logging_config import setup_logging, setup_flask_logging, logger
-from middleware import init_error_handlers
-from routes.pages import init_pages
+from app.config import Config
+from app.logging_config import setup_logging, setup_flask_logging, logger
+from app.middleware import init_error_handlers
+from app.routes.pages import init_pages
 import os
 
 def create_app(config_class=Config):
     # Create the Flask application with absolute path to templates
-    template_dir = os.path.abspath('templates')
+    template_dir = os.path.join(os.path.dirname(__file__), 'templates')
     app = Flask(__name__, template_folder=template_dir)
     app.config.from_object(config_class)
     
@@ -24,43 +24,36 @@ def create_app(config_class=Config):
     init_pages(app)
 
     # Log all requests and responses (skip favicon and healthcheck)
-    @app.before_request
-    def log_request():
-        # Skip favicon and healthcheck requests
-        if request.path == '/favicon.ico':
-            return
-        if request.headers.get('X-Healthcheck') == 'true':
-            return
-        # Get real client IP from headers if behind proxy/Docker
+    def get_real_ip():
+        """Get real client IP from headers if behind proxy/Docker."""
         real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
         if ',' in real_ip:
             real_ip = real_ip.split(',')[0].strip()
-        logger.debug(f"Request: {request.method} {request.path} - {real_ip}")
+        return real_ip
+
+    def should_skip_logging():
+        """Check if request should be skipped from logging."""
+        return request.path == '/favicon.ico' or request.headers.get('X-Healthcheck') == 'true'
+
+    @app.before_request
+    def log_request():
+        if should_skip_logging():
+            return
+        logger.debug(f"Request: {request.method} {request.path} - {get_real_ip()}")
 
     @app.after_request
     def log_response(response):
-        # Skip favicon and healthcheck requests
-        if request.path == '/favicon.ico':
+        if should_skip_logging():
             return response
-        if request.headers.get('X-Healthcheck') == 'true':
-            return response
-        # Get real client IP from headers if behind proxy/Docker
-        real_ip = request.headers.get('X-Forwarded-For', request.headers.get('X-Real-IP', request.remote_addr))
-        if ',' in real_ip:
-            real_ip = real_ip.split(',')[0].strip()
         logger.debug(f"Response: {request.method} {request.path} - {response.status_code}")
         return response
     
     # Import routes here to avoid circular imports
-    from routes import init_app as init_routes
+    from app.routes import init_app as init_routes
     
     # Initialize routes
     init_routes(app)
 
-    @app.route('/')
-    def index():
-        return render_template('index.html')
-    
     return app
 
 def run_development_server():
