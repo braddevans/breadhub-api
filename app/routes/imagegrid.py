@@ -10,10 +10,10 @@ from . import BaseRoute
 
 class ImageGridAPI(BaseRoute):
     """Image Grid Generator API routes."""
-    
+
     def __init__(self):
         super().__init__('imagegrid', url_prefix='/imagegrid')
-        
+
     def _register_routes(self):
         """Register all image grid routes."""
         self.bp.route('', methods=['GET'], endpoint='imagegrid_page')(self.imagegrid_page)
