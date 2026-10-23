@@ -58,64 +58,107 @@
 
         <!-- Right: Options -->
         <div class="col-lg-4">
-            <div class="sticky-top">
+            <div class="options-sticky">
                 <div class="card barcode-card">
-                    <div class="card-header"><h5 class="mb-0">Barcode Options</h5></div>
+                    <div class="card-header"><h5 class="mb-0"><i class="bi bi-sliders2 me-2" aria-hidden="true"></i>Barcode Options</h5></div>
                     <div class="card-body options-panel">
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="writeText" checked>
-                            <label class="form-check-label" for="writeText">Show Text</label>
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" id="centerText" checked>
-                            <label class="form-check-label" for="centerText">Center Text</label>
-                        </div>
+                        <!-- Bars -->
+                        <section class="option-group" aria-labelledby="optBarsTitle">
+                            <h6 class="option-group-title" id="optBarsTitle"><i class="bi bi-upc" aria-hidden="true"></i> Bars</h6>
+                            <div class="option-range">
+                                <div class="option-range-head">
+                                    <label for="moduleWidth">Module width</label>
+                                    <span class="option-value"><output id="moduleWidthValue" for="moduleWidth">0.20</output><span class="unit">mm</span></span>
+                                </div>
+                                <input type="range" class="form-range" min="0.1" max="1" step="0.05" id="moduleWidth" value="0.2">
+                            </div>
+                            <div class="option-range">
+                                <div class="option-range-head">
+                                    <label for="moduleHeight">Bar height</label>
+                                    <span class="option-value"><output id="moduleHeightValue" for="moduleHeight">15.0</output><span class="unit">mm</span></span>
+                                </div>
+                                <input type="range" class="form-range" min="5" max="50" step="1" id="moduleHeight" value="15">
+                            </div>
+                            <div class="option-range">
+                                <div class="option-range-head">
+                                    <label for="quietZone">Quiet zone</label>
+                                    <span class="option-value"><output id="quietZoneValue" for="quietZone">4.0</output><span class="unit">mm</span></span>
+                                </div>
+                                <input type="range" class="form-range" min="1" max="20" step="0.5" id="quietZone" value="4">
+                            </div>
+                        </section>
 
-                        <div class="mb-3">
-                            <label for="moduleWidth" class="form-label">Module Width: <span id="moduleWidthValue" class="badge bg-secondary badge-setting">0.20</span></label>
-                            <input type="range" class="form-range" min="0.1" max="1" step="0.05" id="moduleWidth" value="0.2">
-                        </div>
-                        <div class="mb-3">
-                            <label for="moduleHeight" class="form-label">Module Height: <span id="moduleHeightValue" class="badge bg-secondary badge-setting">15.0</span></label>
-                            <input type="range" class="form-range" min="5" max="50" step="1" id="moduleHeight" value="15">
-                        </div>
-                        <div class="mb-3">
-                            <label for="quietZone" class="form-label">Quiet Zone: <span id="quietZoneValue" class="badge bg-secondary badge-setting">4.0</span></label>
-                            <input type="range" class="form-range" min="1" max="20" step="0.5" id="quietZone" value="4">
-                        </div>
-                        <div class="mb-3">
-                            <label for="fontSize" class="form-label">Font Size: <span id="fontSizeValue" class="badge bg-secondary badge-setting">10</span></label>
-                            <input type="range" class="form-range" min="6" max="36" step="1" id="fontSize" value="10">
-                        </div>
-                        <div class="mb-3">
-                            <label for="textDistance" class="form-label">Text Distance: <span id="textDistanceValue" class="badge bg-secondary badge-setting">5.0</span></label>
-                            <input type="range" class="form-range" min="0" max="20" step="0.5" id="textDistance" value="5">
-                        </div>
-                        <div class="mb-3">
-                            <label for="fontFamily" class="form-label">Font Family</label>
-                            <select class="form-select" id="fontFamily">
-                                <!-- System Fonts -->
-                                <option value="Arial">Arial (System)</option>
-                                <!-- Available Fonts from /fonts directory -->
-                                <option value="Barlow">Barlow</option>
-                                <option value="Courier Prime">Courier Prime</option>
-                                <option value="Fira Code">Fira Code (Monospace)</option>
-                                <option value="Helvetica">Helvetica</option>
-                                <option value="Lato">Lato</option>
-                                <option value="Open Sans">Open Sans</option>
-                                <option value="Times New Roman">Times New Roman</option>
-                                <option value="Typo Round Bold" selected>Typo Round Bold</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="foregroundColor" class="form-label">Foreground Color</label>
-                            <input type="color" class="form-control form-control-color" id="foregroundColor" value="#000000">
-                        </div>
-                        <div class="mb-3">
-                            <label for="backgroundColor" class="form-label">Background Color</label>
-                            <input type="color" class="form-control form-control-color" id="backgroundColor" value="#FFFFFF">
-                        </div>
+                        <!-- Text -->
+                        <section class="option-group" aria-labelledby="optTextTitle">
+                            <h6 class="option-group-title" id="optTextTitle"><i class="bi bi-fonts" aria-hidden="true"></i> Text</h6>
+                            <div class="form-check form-switch option-switch">
+                                <label class="form-check-label" for="writeText">Show text</label>
+                                <input class="form-check-input" type="checkbox" role="switch" id="writeText" checked>
+                            </div>
+                            <!-- Disabled as a whole while text is hidden. -->
+                            <fieldset id="textOptions" class="option-fieldset">
+                                <div class="form-check form-switch option-switch">
+                                    <label class="form-check-label" for="centerText">Centre text</label>
+                                    <input class="form-check-input" type="checkbox" role="switch" id="centerText" checked>
+                                </div>
+                                <div class="option-field">
+                                    <label for="fontFamily">Font</label>
+                                    <select class="form-select form-select-sm" id="fontFamily">
+                                        <!-- System Fonts -->
+                                        <option value="Arial">Arial (System)</option>
+                                        <!-- Available Fonts from /fonts directory -->
+                                        <option value="Barlow">Barlow</option>
+                                        <option value="Courier Prime">Courier Prime</option>
+                                        <option value="Fira Code">Fira Code (Monospace)</option>
+                                        <option value="Helvetica">Helvetica</option>
+                                        <option value="Lato">Lato</option>
+                                        <option value="Open Sans">Open Sans</option>
+                                        <option value="Times New Roman">Times New Roman</option>
+                                        <option value="Typo Round Bold" selected>Typo Round Bold</option>
+                                    </select>
+                                </div>
+                                <div class="option-range">
+                                    <div class="option-range-head">
+                                        <label for="fontSize">Font size</label>
+                                        <span class="option-value"><output id="fontSizeValue" for="fontSize">10</output><span class="unit">pt</span></span>
+                                    </div>
+                                    <input type="range" class="form-range" min="6" max="36" step="1" id="fontSize" value="10">
+                                </div>
+                                <div class="option-range">
+                                    <div class="option-range-head">
+                                        <label for="textDistance">Text gap</label>
+                                        <span class="option-value"><output id="textDistanceValue" for="textDistance">5.0</output><span class="unit">mm</span></span>
+                                    </div>
+                                    <input type="range" class="form-range" min="0" max="20" step="0.5" id="textDistance" value="5">
+                                </div>
+                            </fieldset>
+                        </section>
 
+                        <!-- Colours -->
+                        <section class="option-group" aria-labelledby="optColourTitle">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <h6 class="option-group-title" id="optColourTitle"><i class="bi bi-palette" aria-hidden="true"></i> Colours</h6>
+                                <button type="button" class="btn btn-link btn-sm option-swap" id="btnSwapColors" title="Swap foreground and background">
+                                    <i class="bi bi-arrow-left-right" aria-hidden="true"></i> Swap
+                                </button>
+                            </div>
+                            <div class="color-fields">
+                                <label class="color-field" for="foregroundColor">
+                                    <input type="color" id="foregroundColor" value="#000000">
+                                    <span class="color-field-text">
+                                        <span class="color-field-name">Bars</span>
+                                        <code id="foregroundColorValue">#000000</code>
+                                    </span>
+                                </label>
+                                <label class="color-field" for="backgroundColor">
+                                    <input type="color" id="backgroundColor" value="#ffffff">
+                                    <span class="color-field-text">
+                                        <span class="color-field-name">Background</span>
+                                        <code id="backgroundColorValue">#FFFFFF</code>
+                                    </span>
+                                </label>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </div>
@@ -129,9 +172,29 @@
 (() => {
   const state = { currentBarcode: null };
   const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  // API query parameter -> id of the control that sets it. Shared links use
+  // the parameter names, so this map is what lets a link restore the form.
+  const PARAM_IDS = {
+    write_text: 'writeText',
+    center_text: 'centerText',
+    module_width: 'moduleWidth',
+    module_height: 'moduleHeight',
+    quiet_zone: 'quietZone',
+    font_size: 'fontSize',
+    font_family: 'fontFamily',
+    text_distance: 'textDistance',
+    foreground: 'foregroundColor',
+    background: 'backgroundColor'
+  };
+  const RANGE_IDS = ['moduleWidth', 'moduleHeight', 'quietZone', 'fontSize', 'textDistance'];
+  const COLOR_IDS = ['foregroundColor', 'backgroundColor'];
 
   function updateRangeLabel(inputEl) {
+    // --fill drives the filled part of the slider track in base.css.
+    const min = parseFloat(inputEl.min), max = parseFloat(inputEl.max);
+    inputEl.style.setProperty('--fill', `${((inputEl.value - min) / (max - min)) * 100}%`);
+
     const valueSpan = document.getElementById(`${inputEl.id}Value`);
     if (!valueSpan) return;
     const id = inputEl.id;
@@ -141,28 +204,42 @@
     else valueSpan.textContent = String(inputEl.value);
   }
 
+  function updateColorLabel(inputEl) {
+    document.getElementById(`${inputEl.id}Value`).textContent = inputEl.value.toUpperCase();
+  }
+
+  // Refresh every derived label after controls are changed from code.
+  function syncControls() {
+    RANGE_IDS.forEach(id => updateRangeLabel(document.getElementById(id)));
+    COLOR_IDS.forEach(id => updateColorLabel(document.getElementById(id)));
+    $('#textOptions').disabled = !$('#writeText').checked;
+  }
+
   function setDefaultsFor() {
     $('#moduleWidth').value = '0.2';
     $('#moduleHeight').value = '15';
     $('#quietZone').value = '4';
     $('#fontSize').value = '10';
     $('#textDistance').value = '5';
-    ['moduleWidth','moduleHeight','quietZone','fontSize','textDistance'].forEach(id => updateRangeLabel(document.getElementById(id)));
+    RANGE_IDS.forEach(id => updateRangeLabel(document.getElementById(id)));
   }
 
   function gatherOptions() {
-    return {
-      write_text: $('#writeText').checked,
-      center_text: $('#centerText').checked,
-      module_width: $('#moduleWidth').value,
-      module_height: $('#moduleHeight').value,
-      quiet_zone: $('#quietZone').value,
-      font_size: $('#fontSize').value,
-      font_family: $('#fontFamily').value,
-      text_distance: $('#textDistance').value,
-      foreground: $('#foregroundColor').value,
-      background: $('#backgroundColor').value
-    };
+    return Object.fromEntries(Object.entries(PARAM_IDS).map(([param, id]) => {
+      const el = document.getElementById(id);
+      return [param, el.type === 'checkbox' ? el.checked : el.value];
+    }));
+  }
+
+  // Apply one query parameter to its control, ignoring values the control
+  // cannot hold (an unknown font, a named colour) so they keep the default.
+  function applyParam(param, value) {
+    const el = document.getElementById(PARAM_IDS[param]);
+    if (!el) return;
+    if (el.type === 'checkbox') el.checked = (value === 'true');
+    else if (el.type === 'color') { if (/^#[0-9a-f]{6}$/i.test(value)) el.value = value.toLowerCase(); }
+    else if (el.tagName === 'SELECT') { if ([...el.options].some(o => o.value === value)) el.value = value; }
+    else el.value = value;
   }
 
   async function generateBarcode() {
@@ -190,7 +267,9 @@
       previewContainer.classList.add('has-barcode');
       img.style.display = 'block';
 
-      state.currentBarcode = { type: result.barcode_type || 'code128', data: result.data, imageData: result.barcode, settings: result.options || opts };
+      // params are what was sent, so links rebuilt from them reproduce this
+      // barcode; settings are the server's resolved options, for the JSON copy.
+      state.currentBarcode = { type: result.barcode_type || 'code128', data: result.data, imageData: result.barcode, params: opts, settings: result.options || opts };
     } catch (err) {
       console.error(err);
       showToast(err.message || 'Error generating barcode');
@@ -241,8 +320,7 @@
     const url = new URL(path, origin || window.location.origin);
     url.searchParams.set('type', state.currentBarcode.type);
     url.searchParams.set('data', state.currentBarcode.data);
-    const settings = state.currentBarcode.settings || {};
-    Object.entries(settings).forEach(([key, value]) => {
+    Object.entries(state.currentBarcode.params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         url.searchParams.set(key, value);
       }
@@ -263,23 +341,28 @@
     setDefaultsFor();
     $('#barcodeData').value = data;
 
-    params.forEach((value, key) => {
-      if (['type','data'].includes(key)) return;
-      const el = document.getElementById(key);
-      if (!el) return;
-      if (el.type === 'checkbox') el.checked = (value === 'true');
-      else el.value = value;
-      if (el.type === 'range') updateRangeLabel(el);
-    });
+    params.forEach((value, key) => applyParam(key, value));
+    syncControls();
 
     await generateBarcode();
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    $$('#moduleWidth, #moduleHeight, #quietZone, #fontSize, #textDistance').forEach(el => {
-      updateRangeLabel(el);
+    RANGE_IDS.forEach(id => {
+      const el = document.getElementById(id);
       el.addEventListener('input', () => updateRangeLabel(el));
     });
+    COLOR_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => updateColorLabel(el));
+    });
+    $('#writeText').addEventListener('change', syncControls);
+    $('#btnSwapColors').addEventListener('click', () => {
+      const fg = $('#foregroundColor'), bg = $('#backgroundColor');
+      [fg.value, bg.value] = [bg.value, fg.value];
+      syncControls();
+    });
+    syncControls();
 
     $('#btnGenerate').addEventListener('click', generateBarcode);
 
@@ -296,7 +379,8 @@
       $('#writeText').checked = true;
       $('#centerText').checked = true;
       $('#foregroundColor').value = '#000000';
-      $('#backgroundColor').value = '#FFFFFF';
+      $('#backgroundColor').value = '#ffffff';
+      syncControls();
       await generateBarcode();
       showToast('Reset to defaults');
     });

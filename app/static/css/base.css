@@ -705,8 +705,232 @@ display: block;
     display: none;
 }
 
-.sticky-top {
-    top: 1rem;
+/* Keep the options panel in view beside the preview on wide screens, clear of
+   the sticky navbar. */
+@media (min-width: 992px) {
+    .options-sticky {
+        position: sticky;
+        top: 5.5rem;
+    }
+}
+
+/* Barcode options panel */
+.options-panel {
+    padding: 0.5rem 1.25rem 1.25rem;
+}
+
+.option-group {
+    padding: 1rem 0;
+}
+
+.option-group + .option-group {
+    border-top: 1px solid var(--bs-border-color);
+}
+
+.option-group:last-child {
+    padding-bottom: 0;
+}
+
+.option-group-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin: 0 0 0.85rem;
+    color: var(--bs-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.option-group-title .bi {
+    color: var(--bh-accent);
+    font-size: 0.9rem;
+}
+
+.option-fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    transition: opacity 0.2s ease;
+}
+
+.option-fieldset:disabled {
+    opacity: 0.45;
+}
+
+.option-range + .option-range,
+.option-field + .option-range,
+.option-switch + .option-fieldset,
+.option-fieldset > * + * {
+    margin-top: 0.9rem;
+}
+
+.option-range-head,
+.option-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.option-range-head {
+    margin-bottom: 0.35rem;
+}
+
+.option-range-head label,
+.option-field label {
+    font-size: 0.9rem;
+}
+
+.option-field .form-select {
+    max-width: 62%;
+}
+
+.option-value {
+    min-width: 4.25rem;
+    padding: 0.1rem 0.55rem;
+    border-radius: 999px;
+    background-color: var(--bh-accent-soft);
+    color: var(--bh-accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.option-value .unit {
+    margin-left: 0.2rem;
+    font-weight: 400;
+    opacity: 0.75;
+}
+
+/* Filled track up to the thumb; --fill is set from the page script. */
+.options-panel .form-range {
+    background: transparent;
+}
+
+.options-panel .form-range::-webkit-slider-runnable-track {
+    background: linear-gradient(to right,
+        var(--bh-accent) var(--fill, 50%),
+        var(--bs-secondary-bg) var(--fill, 50%));
+}
+
+.options-panel .form-range::-moz-range-progress {
+    height: 0.5rem;
+    border-radius: 1rem;
+    background: var(--bh-accent);
+}
+
+.options-panel .form-range::-webkit-slider-thumb {
+    background: var(--bs-card-bg);
+    border: 3px solid var(--bh-accent);
+}
+
+.options-panel .form-range::-moz-range-thumb {
+    box-sizing: border-box;
+    background: var(--bs-card-bg);
+    border: 3px solid var(--bh-accent);
+}
+
+/* Label on the left, switch on the right. */
+.option-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 0;
+    margin: 0;
+    padding-left: 0;
+}
+
+.option-switch .form-check-input {
+    float: none;
+    margin: 0;
+    width: 2.4em;
+    height: 1.3em;
+    cursor: pointer;
+}
+
+.option-switch .form-check-label {
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.option-swap {
+    margin-bottom: 0.85rem;
+    padding: 0;
+    color: var(--bs-secondary);
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+
+.option-swap:hover {
+    color: var(--bh-accent);
+}
+
+.color-fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.color-field {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.6rem;
+    background-color: var(--bs-tertiary-bg);
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.color-field:hover,
+.color-field:focus-within {
+    border-color: var(--bh-accent);
+}
+
+.color-field input[type="color"] {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.45rem;
+    background: none;
+    cursor: pointer;
+}
+
+.color-field input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-field input[type="color"]::-webkit-color-swatch {
+    border: 0;
+    border-radius: 0.4rem;
+}
+
+.color-field input[type="color"]::-moz-color-swatch {
+    border: 0;
+    border-radius: 0.4rem;
+}
+
+.color-field-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.color-field-name {
+    font-size: 0.8rem;
+    color: var(--bs-secondary);
+}
+
+.color-field code {
+    color: var(--bs-body-color);
+    font-size: 0.8rem;
 }
 
 .btn-copy {
