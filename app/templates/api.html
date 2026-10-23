@@ -44,6 +44,7 @@
     ('python', 'Python'),
     ('javascript', 'JavaScript'),
     ('node', 'Node.js'),
+    ('vba', 'Excel VBA'),
 ] %}
 
 {# Tabbed code samples. `snippets` maps language key -> code; a missing key
@@ -380,6 +381,32 @@ const response = await fetch("' ~ grid_url ~ '", { method: "POST", body: form })
 if (!response.ok) throw new Error((await response.json()).error);
 await writeFile("grid.png", Buffer.from(await response.arrayBuffer()));',
         } %}
+        {# VBA comments start with an apostrophe, so this one is a block rather
+           than a quoted string in the dict above. #}
+        {% set grid_vba -%}
+' Excel VBA (Windows 10+): build a grid with the curl.exe that ships with
+' Windows, then place it on the sheet. Save the workbook first: the images
+' are read from, and grid.png written to, the workbook's folder.
+Sub InsertImageGrid()
+    Dim folder As String, curlCommand As String
+    folder = ThisWorkbook.Path & "\"
+
+    curlCommand = "curl.exe -s -f -X POST {{ grid_url }}" & _
+              " -F ""images=@" & folder & "first.jpg""" & _
+              " -F ""images=@" & folder & "second.png""" & _
+              " -F size=256 -F gap=8 -F use_gradient=true -F gradient_direction=diagonal" & _
+              " -o """ & folder & "grid.png"""
+
+    If CreateObject("WScript.Shell").Run(curlCommand, 0, True) <> 0 Then
+        MsgBox "The image grid request failed."
+        Exit Sub
+    End If
+
+    ActiveSheet.Shapes.AddPicture folder & "grid.png", msoFalse, msoTrue, _
+        Range("A1").Left, Range("A1").Top, -1, -1
+End Sub
+        {%- endset %}
+        {% set _ = grid_snippets.update({'vba': grid_vba}) %}
         <div class="card mt-4">
             <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-code-slash me-2" aria-hidden="true"></i>Code examples</h3></div>
             <div class="card-body">{{ code_tabs('gridCode', grid_snippets) }}</div>
@@ -466,7 +493,35 @@ await writeFile("grid.png", Buffer.from(await response.arrayBuffer()));',
         'if (!response.ok) throw new Error((await response.json()).error);',
         `await writeFile(${q(file)}, Buffer.from(await response.arrayBuffer()));`,
       ].join('\n'),
+      vba: vbaSnippet(params),
     };
+  }
+
+  // Excel VBA: the Try it settings, with the data taken from each cell.
+  function vbaSnippet(params) {
+    const { data, ...rest } = params;
+    const base = `${buildUrl(rest)}&data=`;
+    return [
+      "' Excel VBA (Windows): put a barcode in column B for every value in column A.",
+      "' Excel 365 can do one cell with a formula instead:",
+      `'   =IMAGE("${base}" & ENCODEURL(A2))`,
+      'Sub InsertBarcodes()',
+      `    Const BASE_URL As String = "${base}"`,
+      '    Dim cell As Range, target As Range',
+      '',
+      '    For Each cell In Range("A2", Cells(Rows.Count, "A").End(xlUp))',
+      '        If cell.Row > 1 And cell.Value <> "" Then',
+      '            Set target = cell.Offset(0, 1)',
+      '            With ActiveSheet.Shapes.AddPicture( _',
+      '                    BASE_URL & WorksheetFunction.EncodeURL(cell.Value), _',
+      '                    msoFalse, msoTrue, target.Left, target.Top, -1, -1)',
+      '                .LockAspectRatio = msoTrue',
+      '                .Height = target.Height',
+      '            End With',
+      '        End If',
+      '    Next cell',
+      'End Sub',
+    ].join('\n');
   }
 
   function update() {
