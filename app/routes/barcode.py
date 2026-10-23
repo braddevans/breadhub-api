@@ -1,5 +1,5 @@
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 
@@ -124,7 +124,7 @@ class BarcodeAPI(BaseRoute):
                 ) if value.replace('.', '', 1).isdigit() else options.get(key)
             elif key in int_options:
                 options[key] = self._check_limits(
-                    key, int(float(value))
+                    key, int(value)
                 ) if value.isdigit() else options.get(key)
             elif key in str_options:
                 options[key] = value
@@ -151,26 +151,22 @@ class BarcodeAPI(BaseRoute):
         })
 
     def generate_barcode(self):
-        try:
-            data = request.args.get('data')
-            if not data:
-                return error_response('Missing required parameter: data', 400)
+        data = request.args.get('data')
+        if not data:
+            return error_response('Missing required parameter: data', 400)
 
-            barcode_type = request.args.get('type', 'code128').lower()
-            if barcode_type not in SUPPORTED_BARCODE_TYPES:
-                return error_response(
-                    f"Unsupported barcode format: {barcode_type}. "
-                    f"Supported: {', '.join(sorted(SUPPORTED_BARCODE_TYPES))}",
-                    400
-                )
+        barcode_type = request.args.get('type', 'code128').lower()
+        if barcode_type not in SUPPORTED_BARCODE_TYPES:
+            return error_response(
+                f"Unsupported barcode format: {barcode_type}. "
+                f"Supported: {', '.join(sorted(SUPPORTED_BARCODE_TYPES))}",
+                400
+            )
 
-            if request.args.get('uppercase', 'false').lower() == 'true':
-                data = data.upper()
-            raw = request.args.get('raw', 'false').lower() == 'true'
-            return self._create_barcode_response(data, raw)
-        except Exception as e:
-            logger.exception("Error generating barcode: {}", e)
-            return error_response(str(e), 500)
+        if request.args.get('uppercase', 'false').lower() == 'true':
+            data = data.upper()
+        raw = request.args.get('raw', 'false').lower() == 'true'
+        return self._create_barcode_response(data, raw)
 
     def _create_barcode_response(self, data, raw=False):
         logger.debug("Generating Code128 barcode for data: {!r}", data)
@@ -228,14 +224,10 @@ class BarcodeAPI(BaseRoute):
             'barcode': f'data:{mimetype};base64,{base64_encoded}',
             'barcode_type': 'code128',
             'data': data,
-            'generated_at': datetime.now(timezone.utc).isoformat(),
+            'generated_at': datetime.now(UTC).isoformat(),
             'options': serializable_options
         })
 
-# Create and export the blueprint
-barcode_bp, url_prefix = BarcodeAPI.create()
-
-
 def create_blueprint():
     """Entry point used by app.routes.init_app to register this module."""
-    return barcode_bp, url_prefix
+    return BarcodeAPI.create()

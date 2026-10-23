@@ -1,37 +1,25 @@
-version: '3.8'
-
 services:
   web:
-    image: python:3.9-slim
+    image: python:3.14-slim
     platform: linux/amd64  # Ensure Linux container is used on Windows
     ports:
       - "6400:5000"
     environment:
-      - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - PYTHONFAULTHANDLER=1
       - LOG_LEVEL=INFO
-      - GUNICORN_WORKER_ID=worker-${HOSTNAME}
+      - LOG_DIR=/var/log/breadhub
       - PYTHONPATH=/app
+      # Worker/thread counts default to the values in gunicorn.conf.py
+      # - GUNICORN_WORKERS=4
+      # - GUNICORN_THREADS=4
     volumes:
       # For Windows, use the full path for the volume
       - ${PWD}:/app
-      # Mount the docker.sock to allow container management from within the container
-      - /var/run/docker.sock:/var/run/docker.sock
       # Ensure logs are persisted
       - ./logs:/var/log/breadhub
     working_dir: /app
-    # Install dependencies and run Gunicorn with sync workers for CPU-bound barcode generation
+    # Install dependencies and run Gunicorn; settings live in gunicorn.conf.py
     command: >
       sh -c "pip install --no-cache-dir -r requirements.txt &&
-      gunicorn --bind 0.0.0.0:5000
-      --workers 4
-      --worker-class sync
-      --timeout 30
-      --max-requests 1000
-      --max-requests-jitter 100
-      --worker-tmp-dir /dev/shm
-      --log-level info
-      --access-logfile /dev/null
-      wsgi:app"
-
+      gunicorn wsgi:app"

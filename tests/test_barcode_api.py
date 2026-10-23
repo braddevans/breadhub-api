@@ -1,12 +1,13 @@
 import base64
 import pytest
 from flask import Flask
-from app.routes.barcode import barcode_bp, url_prefix
+from app.routes.barcode import create_blueprint
 
 
 @pytest.fixture
 def client():
     app = Flask(__name__)
+    barcode_bp, url_prefix = create_blueprint()
     app.register_blueprint(barcode_bp, url_prefix=url_prefix)
     with app.test_client() as client:
         yield client

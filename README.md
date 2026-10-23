@@ -1,6 +1,6 @@
 # BreadHub API
 
-[![Python](https://img.shields.io/badge/Python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
+[![Python](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/downloads/release/python-3140/)
 [![Flask](https://img.shields.io/badge/Flask-3.1-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://www.docker.com/)
@@ -55,7 +55,7 @@ A Flask-based REST API for generating barcodes and image grids with a modern web
 
 4. Run the development server:
    ```bash
-   python app/main.py
+   LOG_DIR=./logs python -m app.main
    ```
 
 5. Access the application at `http://localhost:5000`
@@ -150,6 +150,7 @@ breadhub-api/
 │   └── fonts/               # Custom fonts
 ├── tests/                   # Test suite
 ├── wsgi.py                  # WSGI entry point
+├── gunicorn.conf.py         # Gunicorn settings (workers, threads, preload)
 ├── docker-compose.yml       # Docker configuration
 ├── requirements.txt         # Python dependencies
 └── CHANGES.md               # Change log
@@ -158,9 +159,14 @@ breadhub-api/
 ## Configuration
 
 Environment variables:
-- `FLASK_ENV`: Flask environment (development/production)
 - `LOG_LEVEL`: Logging level (DEBUG/INFO/WARNING/ERROR)
+- `LOG_DIR`: Directory for log files (default `/var/log/breadhub`; empty for stderr only)
+- `MAX_CONTENT_LENGTH`: Maximum request body size in bytes (default 32 MB)
+- `GUNICORN_WORKERS` / `GUNICORN_THREADS`: Worker processes and threads per worker (default 4 / 4)
+- `GUNICORN_BIND`, `GUNICORN_TIMEOUT`: Bind address and worker timeout
 - `PYTHONPATH`: Python module path (set to /app in Docker)
+
+In production, run `gunicorn wsgi:app` from the project root; it picks up `gunicorn.conf.py`.
 
 ## Testing
 

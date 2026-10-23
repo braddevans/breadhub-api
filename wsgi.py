@@ -1,26 +1,10 @@
 """
-WSGI config for BreadHub API.
+WSGI entry point for BreadHub API.
 
-This module contains the WSGI application used by the production server.
+Run under Gunicorn with the settings in gunicorn.conf.py:
+
+    gunicorn wsgi:app
 """
-import os
-import sys
 from app.main import create_app
 
-# Ensure we're in production mode
-os.environ['FLASK_ENV'] = 'production'
-
-# Get the worker ID if running under Gunicorn
-try:
-    import multiprocessing
-    worker_id = f"gunicorn-{multiprocessing.current_process().pid}"
-except (ImportError, AttributeError):
-    worker_id = f"worker-{os.getpid()}"
-
-# Set worker ID for logging
-os.environ['GUNICORN_WORKER_ID'] = worker_id
-
-# Create the Flask application using the default config
 app = create_app()
-
-# This file should only be used as an entry point for WSGI servers like Gunicorn

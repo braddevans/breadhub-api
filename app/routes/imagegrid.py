@@ -277,10 +277,6 @@ class ImageGridAPI(BaseRoute):
             return error_response(str(e), 500)
 
 
-# Create and export the blueprint
-imagegrid_bp, url_prefix = ImageGridAPI.create()
-
-
 def create_blueprint():
     """Entry point used by app.routes.init_app to register this module."""
-    return imagegrid_bp, url_prefix
+    return ImageGridAPI.create()

@@ -1,5 +1,5 @@
 from flask import jsonify
-from datetime import datetime
+from datetime import UTC, datetime
 from werkzeug.exceptions import HTTPException
 from app.logging_config import logger
 
@@ -8,12 +8,12 @@ def error_response(message, status_code):
         logger.warning("HTTP {}: {}", status_code, message)
     else:
         logger.error("HTTP {}: {}", status_code, message)
-        
+
     response = jsonify({
         'error': message,
         'status': 'error',
         'status_code': status_code,
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now(UTC).isoformat()
     })
     response.status_code = status_code
     return response
