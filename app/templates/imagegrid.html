@@ -70,12 +70,12 @@
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="size" class="form-label">Image Size (px)</label>
-                            <input type="number" id="size" name="size" value="512" min="64" max="2048" 
+                            <input type="number" id="size" name="size" value="{{ default_size }}" min="{{ size_limits[0] }}" max="{{ size_limits[1] }}"
                                 class="form-control">
                         </div>
                         <div class="col-md-6">
                             <label for="gap" class="form-label">Gap (px)</label>
-                            <input type="number" id="gap" name="gap" value="10" min="0" max="100"
+                            <input type="number" id="gap" name="gap" value="{{ default_gap }}" min="{{ gap_limits[0] }}" max="{{ gap_limits[1] }}"
                                 class="form-control">
                         </div>
                     </div>
@@ -92,7 +92,7 @@
                             <label for="bg_color" class="form-label">Background Color</label>
                             <div class="input-group">
                                 <input type="color" id="bg_color_picker" name="bg_color_picker" value="#ffffff" 
-                                    class="form-control form-control-color" style="width: 50px;">
+                                    class="form-control form-control-color">
                                 <input type="text" id="bg_color" name="bg_color" value="#ffffff" placeholder="#ffffff or 255,255,255"
                                     class="form-control">
                             </div>
@@ -105,7 +105,7 @@
                                     <label for="gradientStart" class="form-label">Start Color</label>
                                     <div class="input-group">
                                         <input type="color" id="gradientStartPicker" name="gradientStartPicker" value="#ffffff"
-                                            class="form-control form-control-color" style="width: 50px;">
+                                            class="form-control form-control-color">
                                         <input type="text" id="gradientStart" name="gradient_start" value="#ffffff" placeholder="#ffffff"
                                             class="form-control">
                                     </div>
@@ -114,7 +114,7 @@
                                     <label for="gradientEnd" class="form-label">End Color</label>
                                     <div class="input-group">
                                         <input type="color" id="gradientEndPicker" name="gradientEndPicker" value="#000000"
-                                            class="form-control form-control-color" style="width: 50px;">
+                                            class="form-control form-control-color">
                                         <input type="text" id="gradientEnd" name="gradient_end" value="#000000" placeholder="#000000"
                                             class="form-control">
                                     </div>

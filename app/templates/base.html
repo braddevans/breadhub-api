@@ -31,80 +31,94 @@
     <!-- Background canvas + accent glows -->
     <div id="particles-js" aria-hidden="true"></div>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg sticky-top">
-        <div class="container">
-            <a class="navbar-brand" href="{{ url_for('pages.index') }}">
-                <span class="brand-mark" aria-hidden="true"><i class="bi bi-hexagon-fill"></i></span>
-                {{ site_name }}
+    {% macro nav_link(endpoint, icon, label) -%}
+        {%- set active = request.endpoint == endpoint -%}
+        <li>
+            <a class="sidebar-link{% if active %} active{% endif %}" href="{{ url_for(endpoint) }}"
+               {%- if active %} aria-current="page"{% endif %}>
+                <i class="bi bi-{{ icon }}" aria-hidden="true"></i><span>{{ label }}</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto ms-lg-3 my-3 my-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'pages.index' %}active{% endif %}"
-                           {% if request.endpoint == 'pages.index' %}aria-current="page"{% endif %}
-                           href="{{ url_for('pages.index') }}">
-                            <i class="bi bi-house-door"></i> Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'pages.barcode_generator' %}active{% endif %}"
-                           {% if request.endpoint == 'pages.barcode_generator' %}aria-current="page"{% endif %}
-                           href="{{ url_for('pages.barcode_generator') }}">
-                            <i class="bi bi-upc-scan"></i> Barcode Generator
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'pages.image_grid' %}active{% endif %}"
-                           {% if request.endpoint == 'pages.image_grid' %}aria-current="page"{% endif %}
-                           href="{{ url_for('pages.image_grid') }}">
-                            <i class="bi bi-grid-3x3"></i> Image Grid
-                        </a>
-                    </li>
-                </ul>
-                <div class="d-flex">
-                    <button class="btn btn-sm btn-outline-secondary" id="themeToggle" type="button"
-                            aria-label="Toggle colour theme" title="Toggle colour theme">
-                        <i class="bi bi-moon-stars"></i>
+        </li>
+    {%- endmacro %}
+
+    <!-- Top bar, shown below lg in place of the sidebar -->
+    <header class="topbar d-lg-none">
+        <button class="btn topbar-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar"
+                aria-controls="sidebar" aria-label="Open navigation">
+            <i class="bi bi-list" aria-hidden="true"></i>
+        </button>
+        <a class="sidebar-brand" href="{{ url_for('pages.index') }}">
+            <span class="brand-mark" aria-hidden="true"><i class="bi bi-hexagon-fill"></i></span>
+            {{ site_name }}
+        </a>
+    </header>
+
+    <div class="app-shell">
+        <!-- Sidebar: fixed column on lg and up, slide-out drawer below -->
+        <aside class="sidebar offcanvas-lg offcanvas-start" id="sidebar" tabindex="-1" aria-label="Site navigation">
+            <div class="sidebar-inner">
+                <div class="sidebar-head">
+                    <a class="sidebar-brand" href="{{ url_for('pages.index') }}">
+                        <span class="brand-mark" aria-hidden="true"><i class="bi bi-hexagon-fill"></i></span>
+                        {{ site_name }}
+                    </a>
+                    <button type="button" class="btn-close d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar"
+                            aria-label="Close navigation"></button>
+                </div>
+
+                <nav class="sidebar-nav" aria-label="Main">
+                    <ul>
+                        {{ nav_link('pages.index', 'house-door', 'Home') }}
+                    </ul>
+                    <div class="sidebar-section">Tools</div>
+                    <ul>
+                        {{ nav_link('pages.barcode_generator', 'upc-scan', 'Barcode Generator') }}
+                        {{ nav_link('pages.image_grid', 'grid-3x3', 'Image Grid') }}
+                    </ul>
+                </nav>
+
+                <!-- Pinned to the bottom of the sidebar -->
+                <div class="sidebar-foot">
+                    <nav class="sidebar-nav" aria-label="Developers">
+                        <div class="sidebar-section">Developers</div>
+                        <ul>
+                            {{ nav_link('pages.api_reference', 'braces', 'API reference') }}
+                        </ul>
+                    </nav>
+                    <button class="sidebar-link mt-2" id="themeToggle" type="button" aria-label="Toggle colour theme">
+                        <i class="bi bi-moon-stars" aria-hidden="true"></i><span id="themeToggleLabel">Dark mode</span>
                     </button>
                 </div>
             </div>
-        </div>
-    </nav>
+        </aside>
 
-    <!-- Main Content -->
-    <main class="main-content" id="main">
-        <div class="container">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+        <div class="app-main">
+            <!-- Main Content -->
+            <main class="main-content" id="main">
+                <div class="container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
 
-            {% block content %}{% endblock %}
-        </div>
-    </main>
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
 
-    <!-- Footer -->
-    <footer>
-        <div class="container d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-            <p class="mb-0 text-muted">&copy; {{ now().year }} {{ site_name }}. All rights reserved.</p>
-            <ul class="nav gap-3 mb-0">
-                <li><a href="{{ url_for('pages.barcode_generator') }}">Barcode Generator</a></li>
-                <li><a href="{{ url_for('pages.image_grid') }}">Image Grid</a></li>
-                <li><a href="{{ url_for('api.barcode.list_all_writer_options') }}">API options</a></li>
-            </ul>
+            <!-- Footer -->
+            <footer>
+                <div class="container">
+                    <p class="mb-0 text-muted">&copy; {{ now().year }} {{ site_name }}. All rights reserved.</p>
+                </div>
+            </footer>
         </div>
-    </footer>
+    </div>
 
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -136,10 +150,12 @@
             const themeToggle = document.getElementById('themeToggle');
             const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+            // The button offers the theme you would switch to.
             function updateIcon() {
                 const icon = themeToggle.querySelector('i');
                 const isDark = html.getAttribute('data-bs-theme') === 'dark';
                 icon.className = isDark ? 'bi bi-sun' : 'bi bi-moon-stars';
+                document.getElementById('themeToggleLabel').textContent = isDark ? 'Light mode' : 'Dark mode';
             }
 
             // Particle colour follows the theme, so the canvas is rebuilt

@@ -12,7 +12,7 @@
     --bs-danger: #dc3545;
     --bs-light: #f8f9fa;
     --bs-dark: #212529;
-    
+
     /* Light theme - Neutral gray */
     --bs-body-bg: #f0f2f5;
     --bs-body-color: #2d3748;
@@ -27,17 +27,6 @@
     --bs-form-control-focus: #9ca3af;
     --bs-form-control-disabled-bg: #e9ecef;
     --bs-form-control-disabled-color: #6c757d;
-    
-    /* Aliases for backward compatibility */
-    --primary-color: var(--bs-primary);
-    --primary-hover: #5e35b1;
-    --secondary-color: var(--bs-secondary);
-    --success-color: var(--bs-success);
-    --info-color: var(--bs-info);
-    --warning-color: var(--bs-warning);
-    --danger-color: var(--bs-danger);
-    --light-color: var(--bs-light);
-    --dark-color: var(--bs-dark);
 
     /* Chrome shared by the shell (nav, footer, hero, cards). Every one of
        these is redefined for the dark theme below, so nothing here may be
@@ -115,27 +104,83 @@ body {
     color: #fff;
 }
 
-/* Navigation */
-.navbar {
+/* ---------------------------------------------------------------------------
+   App shell: left sidebar beside the main column on lg and up; below that the
+   sidebar becomes an offcanvas drawer opened from the top bar.
+   --------------------------------------------------------------------------- */
+
+.app-shell {
+    flex: 1;
+    display: flex;
+}
+
+.app-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+    padding: 2.5rem 0 3.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar {
+    --bs-offcanvas-width: 17rem;
+    --bs-offcanvas-border-width: 0;
+}
+
+@media (min-width: 992px) {
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        flex-shrink: 0;
+        width: 16rem;
+        height: 100vh;
+    }
+}
+
+/* Bootstrap forces .offcanvas-lg transparent on wide screens, so the panel
+   chrome lives on this inner wrapper instead. */
+.sidebar-inner {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.25rem 0.85rem;
+    overflow-y: auto;
     background-color: var(--bh-chrome-bg);
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border-bottom: 1px solid var(--bh-chrome-border);
-    box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.12);
-    padding-top: 0.65rem;
-    padding-bottom: 0.65rem;
+    border-right: 1px solid var(--bh-chrome-border);
 }
 
-.navbar-brand {
+.sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0.5rem 1rem;
+}
+
+.sidebar-brand {
     display: inline-flex;
     align-items: center;
-    gap: 0.55rem;
+    gap: 0.6rem;
+    color: var(--bs-body-color);
+    font-size: 1.1rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    color: var(--bs-body-color) !important;
+    text-decoration: none;
 }
 
-.navbar-brand .brand-mark {
+.sidebar-brand:hover {
+    color: var(--bs-body-color);
+}
+
+.brand-mark {
     display: grid;
     place-items: center;
     width: 2rem;
@@ -147,75 +192,96 @@ body {
     box-shadow: 0 0.25rem 0.75rem var(--bh-glow-a);
 }
 
-.navbar-nav {
-    gap: 0.25rem;
+.sidebar-nav ul {
+    display: grid;
+    gap: 0.15rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
-.navbar .nav-link {
-    display: inline-flex;
+.sidebar-section {
+    margin: 1.25rem 0.75rem 0.4rem;
+    color: var(--bs-secondary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sidebar-link {
+    display: flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    border-radius: 0.5rem;
-    color: var(--bs-body-color) !important;
-    opacity: 0.75;
+    gap: 0.7rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-radius: 0.55rem;
+    background-color: transparent;
+    color: var(--bs-body-color);
+    font-size: 0.92rem;
+    text-align: left;
+    text-decoration: none;
+    opacity: 0.8;
     transition: color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
 }
 
-.navbar .nav-link:hover,
-.navbar .nav-link:focus-visible {
+.sidebar-link .bi {
+    width: 1.1rem;
+    font-size: 1.05rem;
+    text-align: center;
+}
+
+.sidebar-link:hover,
+.sidebar-link:focus-visible {
     opacity: 1;
+    color: var(--bs-body-color);
     background-color: var(--bh-accent-soft);
 }
 
-.navbar .nav-link.active {
+.sidebar-link.active {
     opacity: 1;
-    color: var(--bh-accent) !important;
+    color: var(--bh-accent);
     background-color: var(--bh-accent-soft);
+    box-shadow: inset 3px 0 0 var(--bh-accent);
+    font-weight: 600;
 }
 
-.navbar-toggler {
-    border-color: var(--bh-chrome-border);
+.sidebar-foot {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--bh-chrome-border);
 }
 
-/* Bootstrap scopes its dark navbar tokens to `.navbar[data-bs-theme=dark]`,
-   but the theme attribute lives on <html> here, so the hamburger stroke has
-   to be re-declared for dark mode. */
-[data-bs-theme="dark"] .navbar {
-    --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+.sidebar-foot .sidebar-section {
+    margin-top: 0;
 }
 
-/* Theme Toggle Button */
-#themeToggle {
+/* Top bar for narrow screens */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1rem;
+    background-color: var(--bh-chrome-bg);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--bh-chrome-border);
+}
+
+.topbar-toggle {
+    padding: 0.2rem 0.45rem;
+    border: 0;
     color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
-    background-color: transparent;
-    transition: all 0.3s ease;
+    font-size: 1.5rem;
+    line-height: 1;
 }
 
-#themeToggle:hover {
-    background-color: var(--bs-secondary-bg);
-    border-color: var(--bs-primary);
-    color: var(--bs-primary);
-}
-
-[data-bs-theme="light"] #themeToggle {
-    color: var(--bs-body-color);
-    border-color: var(--bs-border-color);
-}
-
-[data-bs-theme="light"] #themeToggle:hover {
-    background-color: var(--bs-secondary-bg);
-    border-color: var(--bs-primary);
-    color: var(--bs-primary);
-}
-
-/* Main Content */
-.main-content {
-    flex: 1;
-    padding: 2.5rem 0 3.5rem;
-    position: relative;
-    z-index: 1;
+.topbar-toggle:hover {
+    background-color: var(--bh-accent-soft);
 }
 
 /* Particles.js - kept transparent so the body gradient below shows through,
@@ -235,9 +301,13 @@ body {
 
 /* Card Styling */
 .card {
+    /* Set through Bootstrap's variables, not border-radius alone: the header
+       and footer corners are rounded with the inner radius, and leaving that
+       at Bootstrap's smaller default makes them poke out past the card. */
+    --bs-card-border-radius: 0.9rem;
+    --bs-card-inner-border-radius: calc(0.9rem - var(--bs-border-width));
     background-color: var(--bs-card-bg);
     border-color: var(--bs-border-color);
-    border-radius: 0.9rem;
     margin-bottom: 1.5rem;
     box-shadow: var(--bh-shadow);
     transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
@@ -253,23 +323,6 @@ body {
     background-color: var(--bs-card-bg);
     border-bottom: 1px solid var(--bs-border-color);
     color: var(--bs-body-color);
-}
-
-/* Ensure form elements inside cards respect the theme */
-.card .form-control,
-.card .form-select,
-.card .form-range {
-    background-color: var(--bs-form-control-bg);
-    color: var(--bs-form-control-color);
-    border-color: var(--bs-form-control-border);
-}
-
-.card .form-control:focus,
-.card .form-select:focus {
-    background-color: var(--bs-form-control-bg);
-    color: var(--bs-form-control-color);
-    border-color: var(--bs-form-control-focus);
-    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.15);
 }
 
 /* Form Controls */
@@ -289,6 +342,12 @@ body {
 
 /* Range Inputs */
 .form-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--bs-secondary-bg);
     transition: opacity 0.3s ease;
 }
 
@@ -300,7 +359,7 @@ body {
 }
 
 .form-range::-webkit-slider-thumb {
-    background: var(--primary-color);
+    background: var(--bs-primary);
     border: none;
     border-radius: 50%;
     height: 1.25rem;
@@ -311,7 +370,7 @@ body {
 
 .form-range::-webkit-slider-thumb:active {
     transform: scale(1.2);
-    box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 /* Firefox */
@@ -322,7 +381,7 @@ body {
 }
 
 .form-range::-moz-range-thumb {
-    background: var(--primary-color);
+    background: var(--bs-primary);
     border: none;
     border-radius: 50%;
     height: 1.25rem;
@@ -332,12 +391,13 @@ body {
 
 .form-range::-moz-range-thumb:active {
     transform: scale(1.2);
-    box-shadow: 0 0 0 0.25rem rgba(111, 66, 193, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 /* Focus styles */
 .form-range:focus {
     outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
 }
 
 .form-range:focus::-webkit-slider-thumb {
@@ -349,45 +409,6 @@ body {
 }
 
 
-/* Status Messages */
-.status-message {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.status-message.show {
-    opacity: 1;
-}
-
-/* Nav Tabs */
-.nav-tabs {
-    border-bottom-color: var(--bs-border-color);
-}
-
-.nav-tabs .nav-link {
-    color: var(--bs-secondary);
-    background-color: transparent;
-    border-color: transparent;
-    transition: color 0.3s ease, border-color 0.3s ease;
-}
-
-.nav-tabs .nav-link:hover {
-    color: var(--bs-body-color);
-    border-color: transparent;
-    isolation: isolate;
-}
-
-.nav-tabs .nav-link.active {
-    color: var(--bs-primary);
-    background-color: transparent;
-    border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
-    border-bottom-color: var(--bs-primary) !important;
-}
-
 /* Footer */
 footer {
     background-color: var(--bh-chrome-bg);
@@ -397,18 +418,6 @@ footer {
     padding: 1.75rem 0;
     margin-top: auto;
     font-size: 0.9rem;
-}
-
-footer a {
-    color: inherit;
-    text-decoration: none;
-    opacity: 0.8;
-    transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-footer a:hover {
-    color: var(--bh-accent);
-    opacity: 1;
 }
 
 /* Utility Classes */
@@ -627,37 +636,24 @@ footer a:hover {
 }
 
 
-/* Barcode Generator Specific Styles */
+/* ---------------------------------------------------------------------------
+   Barcode generator
+   --------------------------------------------------------------------------- */
+
 .preview-container {
-    background: var(--bs-card-bg);
-    padding: 1.25rem;
-    border-radius: .75rem;
-    text-align: center;
-    min-height: 220px;
+    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 1rem 0;
-    position: relative;
-    overflow: hidden;
-    border: 2px dashed var(--bs-border-color);
-    transition: border-color .2s ease, background-color .2s ease;
-}
-
-/* Barcode Preview Container */
-#barcodePreviewContainer {
-    position: relative;
     min-height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    background: var(--bs-body-bg);
-    border-radius: .25rem;
+    margin: 1rem 0;
     padding: 1.5rem;
-    margin-top: 1rem;
+    overflow: hidden;
     border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    background: var(--bs-body-bg);
+    text-align: center;
     transition: all 0.3s ease;
 }
 
@@ -673,14 +669,14 @@ footer a:hover {
 }
 
 #barcodePlaceholder .bi-upc-scan {
-font-size: 3rem;
-margin-bottom: 0.5rem;
-color: var(--bs-secondary);
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+    color: var(--bs-secondary);
 }
 
 .placeholder-text {
-font-size: 0.9rem;
-margin-top: 0.5rem;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
 }
 
 /* Barcode Image */
@@ -693,24 +689,19 @@ margin-top: 0.5rem;
 }
 
 /* When barcode is generated */
-#barcodePreviewContainer.has-barcode #barcodePlaceholder {
-display: none;
-}
-
-#barcodePreviewContainer.has-barcode #barcodePreview {
-display: block;
-}
-
-#barcodePreviewContainer:not(.has-barcode) #barcodePreview {
+.has-barcode #barcodePlaceholder {
     display: none;
 }
 
-/* Keep the options panel in view beside the preview on wide screens, clear of
-   the sticky navbar. */
+.has-barcode #barcodePreview {
+    display: block;
+}
+
+/* Keep the options panel in view beside the preview on wide screens. */
 @media (min-width: 992px) {
     .options-sticky {
         position: sticky;
-        top: 5.5rem;
+        top: 1.5rem;
     }
 }
 
@@ -933,68 +924,22 @@ display: block;
     font-size: 0.8rem;
 }
 
-.btn-copy {
-    position: relative;
-}
-
-.badge-setting {
-    font-variant-numeric: tabular-nums;
-}
-
-/* Card styling for barcode generator */
-.barcode-card {
-    background-color: var(--bs-card-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--bs-border-color);
-    transition: all 0.3s ease;
-}
-
-/* Form controls in barcode generator */
-.barcode-card .form-control,
-.barcode-card .form-select {
-    background-color: var(--bs-form-control-bg);
-    color: var(--bs-form-control-color);
-    border-color: var(--bs-form-control-border);
-}
-
-/* Tab content in barcode generator */
-.tab-content {
-    background-color: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
-    border-top: none;
-    border-radius: 0 0 0.375rem 0.375rem;
-    padding: 1.25rem;
-}
-
-/* Form range custom styling */
-.form-range {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 0.5rem;
-    border-radius: 0.25rem;
-    background: var(--bs-secondary-bg);
-    outline: none;
-}
-
-.form-range:focus {
-    box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
-}
-
 /* Color inputs */
 .form-control-color {
     width: 3rem;
     height: 2.25rem;
     padding: 0.25rem;
-    background-color: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
+    background-color: var(--bs-form-control-bg);
+    border: 1px solid var(--bs-form-control-border);
     border-radius: 0.25rem;
 }
 
-/* Badges and labels */
-.badge {
-    font-weight: 500;
-    padding: 0.35em 0.5em;
+/* Bootstrap's .input-group > .form-control rule lets every field grow, which
+   stretches a colour swatch across half the row. Pin it to a fixed square. */
+.input-group > .form-control-color {
+    flex: 0 0 3rem;
+    width: 3rem;
+    height: auto;
 }
 
 /* Buttons in barcode card */
@@ -1007,17 +952,6 @@ display: block;
 .barcode-card .btn-outline-light:hover {
     background-color: var(--bs-secondary-bg);
     border-color: var(--bs-border-color);
-}
-
-/* Tab navigation */
-.nav-tabs .nav-link {
-    color: var(--bs-secondary);
-}
-
-.nav-tabs .nav-link.active {
-    color: var(--bs-primary);
-    background-color: var(--bs-body-bg);
-    border-color: var(--bs-border-color) var(--bs-border-color) var(--bs-body-bg);
 }
 
 /* Form switches */
@@ -1038,4 +972,249 @@ display: block;
     background-color: var(--bs-form-control-disabled-bg);
     color: var(--bs-form-control-disabled-color);
     opacity: 0.8;
+}
+
+/* ---------------------------------------------------------------------------
+   Barcode API reference
+   --------------------------------------------------------------------------- */
+
+.api-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.25rem;
+    margin-bottom: 1.75rem;
+}
+
+.api-hero-text {
+    flex: 1 1 18rem;
+}
+
+.api-hero-text p {
+    max-width: 40rem;
+}
+
+.api-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.api-section {
+    /* Clear the sticky top bar on narrow screens when jumped to. */
+    scroll-margin-top: 4.5rem;
+}
+
+.api-section + .api-section {
+    margin-top: 3rem;
+}
+
+@media (min-width: 992px) {
+    .api-section {
+        scroll-margin-top: 1.5rem;
+    }
+}
+
+.api-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.api-limits {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.875rem;
+}
+
+.api-limits li {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.45rem;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.api-limits span {
+    color: var(--bs-secondary);
+}
+
+.api-chip {
+    display: inline-block;
+    margin-left: 0.35rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    background-color: var(--bh-accent-soft);
+    color: var(--bh-accent);
+    font-family: var(--bs-font-monospace);
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: middle;
+}
+
+.api-chip-error {
+    background-color: rgba(var(--bs-danger-rgb), 0.12);
+    color: var(--bs-danger);
+}
+
+.api-code-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.api-code {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--bh-chrome-border);
+    border-radius: 0.6rem;
+    background-color: var(--bs-tertiary-bg);
+    color: var(--bs-body-color);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.api-code-wrap .api-code {
+    padding-right: 3rem;
+}
+
+.api-code code {
+    color: inherit;
+}
+
+.api-code-copy {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    color: var(--bs-secondary);
+}
+
+.api-code-copy:hover {
+    color: var(--bh-accent);
+    background-color: var(--bh-accent-soft);
+}
+
+/* Language tabs above code samples */
+.code-tabs .nav {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
+}
+
+.code-tabs .nav-link {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--bh-chrome-border);
+    border-radius: 999px;
+    color: var(--bs-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.code-tabs .nav-link:hover {
+    color: var(--bs-body-color);
+    border-color: var(--bh-accent);
+}
+
+.code-tabs .nav-link.active {
+    border-color: transparent;
+    background-color: var(--bh-accent-soft);
+    color: var(--bh-accent);
+    font-weight: 600;
+}
+
+.code-tabs .api-code {
+    white-space: pre;
+    word-break: normal;
+    overflow-x: auto;
+}
+
+.tok-key { color: var(--bh-accent); }
+.tok-str { color: var(--bs-success); }
+.tok-num { color: var(--bs-warning); }
+.tok-comment { color: var(--bs-secondary); font-style: italic; }
+
+.api-try-image {
+    max-width: 100%;
+    max-height: 160px;
+    object-fit: contain;
+}
+
+.api-try-error {
+    max-width: 30rem;
+    color: var(--bs-danger);
+    font-size: 0.875rem;
+}
+
+.api-param-group + .api-param-group {
+    margin-top: 1.75rem;
+}
+
+.param-table {
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--bs-body-color);
+    --bs-table-border-color: var(--bs-border-color);
+    font-size: 0.875rem;
+}
+
+.param-table th {
+    color: var(--bs-secondary);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.param-table td {
+    vertical-align: top;
+}
+
+.param-table td:first-child {
+    width: 22%;
+    white-space: nowrap;
+}
+
+.param-table td:nth-child(2) { width: 9%; }
+.param-table td:nth-child(3) { width: 14%; }
+.param-table td:nth-child(4) { width: 22%; }
+
+.param-name {
+    color: var(--bs-body-color);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.param-allowed {
+    color: var(--bs-secondary);
+}
+
+.param-type {
+    display: inline-block;
+    padding: 0.1rem 0.45rem;
+    border-radius: 0.35rem;
+    font-family: var(--bs-font-monospace);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.param-type-string  { background-color: rgba(var(--bs-info-rgb), 0.14);    color: var(--bs-info-text-emphasis); }
+.param-type-number,
+.param-type-integer { background-color: var(--bh-accent-soft);              color: var(--bh-accent); }
+.param-type-boolean { background-color: rgba(var(--bs-success-rgb), 0.14); color: var(--bs-success-text-emphasis); }
+.param-type-file    { background-color: rgba(var(--bs-danger-rgb), 0.12);  color: var(--bs-danger-text-emphasis); }
+.param-type-colour  { background-color: rgba(var(--bs-warning-rgb), 0.16); color: var(--bs-warning-text-emphasis); }
+
+@media (prefers-reduced-motion: no-preference) {
+    html {
+        scroll-behavior: smooth;
+    }
 }

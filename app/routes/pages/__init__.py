@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
 
-from flask import Blueprint, render_template, request
+from flask import Blueprint, current_app, render_template, request
+
+from app.routes import barcode, imagegrid
 
 # Routes are attached at import time, never inside init_pages: Flask forbids
 # adding routes to a blueprint after it has been registered with an app.
@@ -45,13 +47,28 @@ def index():
 @pages_bp.route('/generator')
 def barcode_generator():
     """Serve the barcode generator HTML page."""
-    return render_template('barcode_generator.html')
+    return render_template('barcode_generator.html', barcode_types=barcode.BARCODE_TYPES)
+
+
+@pages_bp.route('/docs')
+def api_reference():
+    """Serve the API reference page for every endpoint."""
+    return render_template(
+        'api.html',
+        barcode_params=barcode.PARAMETER_GROUPS,
+        barcode_types=barcode.BARCODE_TYPES,
+        barcode_aliases=barcode.BARCODE_TYPE_ALIASES,
+        image_formats=list(barcode.IMAGE_FORMAT_MIMETYPES),
+        imagegrid_params=imagegrid.PARAMETER_GROUPS,
+        max_upload_mb=current_app.config['MAX_CONTENT_LENGTH'] // (1024 * 1024),
+        max_output_pixels=imagegrid.MAX_OUTPUT_PIXELS,
+    )
 
 
 @pages_bp.route('/imagegrid')
 def image_grid():
     """Serve the image grid generator HTML page."""
-    return render_template('imagegrid.html')
+    return imagegrid.render_page()
 
 
 def init_pages(app):

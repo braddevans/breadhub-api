@@ -10,7 +10,7 @@ A Flask-based REST API for generating barcodes and image grids with a modern web
 ## Features
 
 ### Barcode Generator
-- Code 128 barcode generation
+- 16 linear barcode types: Code 128, GS1-128, Code 39, Codabar, ITF, EAN-13/8/14, UPC-A, JAN, ISBN-13/10, ISSN, PZN
 - Multiple output formats (PNG, JPEG, GIF, BMP, TIFF)
 - Customizable barcode dimensions and styling
 - Font selection support
@@ -20,7 +20,7 @@ A Flask-based REST API for generating barcodes and image grids with a modern web
 ### Image Grid Generator
 - Upload multiple images via drag-and-drop
 - Automatic grid layout calculation
-- Configurable image size (64-2048px) and gap (0-100px)
+- Configurable image size (16-2048px) and gap (0-512px)
 - Solid color or gradient backgrounds (horizontal, vertical, diagonal)
 - Download generated grids as PNG
 - Settings persistence via cookies
@@ -73,6 +73,8 @@ A Flask-based REST API for generating barcodes and image grids with a modern web
 
 ## API Endpoints
 
+A full interactive reference is served at `/docs` when the app is running. The API needs no keys and has no rate limits.
+
 ### Barcode API
 
 #### Generate Barcode
@@ -83,7 +85,8 @@ GET /api/barcode?data=<data>&type=<type>&raw=<true/false>
 **Parameters:**
 - `data` (required): Data to encode
 - `type`: Barcode format (default: code128)
-  - Supported: code128
+  - Supported: code128, gs1_128, code39, codabar, itf, ean13, ean13-guard, ean8, ean8-guard, ean14, upca, jan, isbn13, isbn10, issn, pzn
+  - Aliases: ean, gtin, upc, isbn, nw-7
 - `raw`: Return raw PNG if true, JSON if false (default)
 - `uppercase`: Convert text to uppercase if true
 - `font_family`: Font family to use
@@ -113,8 +116,8 @@ POST /api/imagegrid/generate
 
 **Form Parameters:**
 - `images`: Multiple image files (multipart/form-data)
-- `size`: Image size in pixels (64-2048, default: 512)
-- `gap`: Gap between images in pixels (0-100, default: 10)
+- `size`: Image size in pixels (16-2048, default: 512)
+- `gap`: Gap between images in pixels (0-512, default: 10)
 - `bg_color`: Background color (hex or RGB, default: #ffffff)
 - `use_gradient`: Use gradient background (true/false)
 - `gradient_start`: Gradient start color (default: #ffffff)

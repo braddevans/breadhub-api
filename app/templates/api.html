@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+
+{% block title %}API reference - {{ super() }}{% endblock %}
+
+{% macro param_table(groups) %}
+    {% for group, params in groups %}
+    <section class="api-param-group">
+        <h4 class="option-group-title">{{ group }}</h4>
+        <div class="table-responsive">
+            <table class="table param-table mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Parameter</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Default</th>
+                        <th scope="col">Allowed</th>
+                        <th scope="col">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in params %}
+                    <tr>
+                        <td>
+                            <code class="param-name">{{ p.name }}</code>
+                            {% if p.required %}<span class="api-chip api-chip-error">required</span>{% endif %}
+                        </td>
+                        <td><span class="param-type param-type-{{ p.type }}">{{ p.type }}</span></td>
+                        <td>{% if p.default is not none %}<code>{{ p.default }}</code>{% else %}<span class="text-muted">&mdash;</span>{% endif %}</td>
+                        <td class="param-allowed">{{ p.allowed }}</td>
+                        <td>{{ p.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endfor %}
+{% endmacro %}
+
+{% set code_languages = [
+    ('curl', 'cURL'),
+    ('cmd', 'Windows CMD'),
+    ('powershell', 'PowerShell'),
+    ('python', 'Python'),
+    ('javascript', 'JavaScript'),
+    ('node', 'Node.js'),
+] %}
+
+{# Tabbed code samples. `snippets` maps language key -> code; a missing key
+   leaves the pane empty for the page script to fill in. #}
+{% macro code_tabs(prefix, snippets={}) %}
+    <div class="code-tabs" data-code-tabs>
+        <ul class="nav" role="tablist">
+            {% for key, label in code_languages %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link{% if loop.first %} active{% endif %}" type="button" role="tab"
+                        data-bs-toggle="tab" data-bs-target="#{{ prefix }}-{{ key }}" data-lang="{{ key }}"
+                        aria-controls="{{ prefix }}-{{ key }}" aria-selected="{{ 'true' if loop.first else 'false' }}">{{ label }}</button>
+            </li>
+            {% endfor %}
+        </ul>
+        <div class="tab-content">
+            {% for key, label in code_languages %}
+            <div class="tab-pane{% if loop.first %} active{% endif %}" id="{{ prefix }}-{{ key }}" role="tabpanel" tabindex="0">
+                <div class="api-code-wrap mb-0">
+                    <pre class="api-code"><code id="{{ prefix }}-{{ key }}-code">{{ snippets.get(key, '') }}</code></pre>
+                    {{ copy_button(prefix ~ '-' ~ key ~ '-code', 'Copy ' ~ label ~ ' example') }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% macro copy_button(target, label) %}
+    <button type="button" class="btn btn-sm api-code-copy" data-copy="{{ target }}" title="{{ label }}">
+        <i class="bi bi-clipboard2" aria-hidden="true"></i><span class="visually-hidden">{{ label }}</span>
+    </button>
+{% endmacro %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <header class="api-hero">
+        <div class="feature-icon mb-0" aria-hidden="true"><i class="bi bi-braces"></i></div>
+        <div class="api-hero-text">
+            <h1 class="h3 mb-1">API reference</h1>
+            <p class="mb-0 text-muted">
+                Everything the barcode generator and image grid pages do is available over HTTP.
+                No keys, no sign-up and no rate limits.
+            </p>
+        </div>
+        <nav class="api-jump" aria-label="APIs on this page">
+            <a href="#barcode" class="btn btn-outline-secondary"><i class="bi bi-upc-scan me-1" aria-hidden="true"></i> Barcode</a>
+            <a href="#imagegrid" class="btn btn-outline-secondary"><i class="bi bi-grid-3x3 me-1" aria-hidden="true"></i> Image grid</a>
+        </nav>
+    </header>
+
+    <!-- ===================================================== Barcode -->
+    <section id="barcode" class="api-section">
+        <div class="api-section-head">
+            <h2 class="h4 mb-0"><i class="bi bi-upc-scan me-2" aria-hidden="true"></i>Barcode</h2>
+            <a href="{{ url_for('pages.barcode_generator') }}" class="small">Open generator <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Try it -->
+            <div class="col-xl-7">
+                <div class="card h-100 mb-0">
+                    <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-play-circle me-2" aria-hidden="true"></i>Try it</h3></div>
+                    <div class="card-body">
+                        <div class="endpoint mb-3">
+                            <span class="method">GET</span>
+                            <code class="path">/api/barcode</code>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-4">
+                                <label for="tryType" class="form-label small text-muted mb-1">type</label>
+                                <select class="form-select" id="tryType">
+                                    {% for key, spec in barcode_types.items() %}
+                                    <option value="{{ key }}">{{ spec.label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-sm-5">
+                                <label for="tryData" class="form-label small text-muted mb-1">data</label>
+                                <input type="text" class="form-control" id="tryData" value="test" autocomplete="off">
+                            </div>
+                            <div class="col-sm-3">
+                                <label for="tryFormat" class="form-label small text-muted mb-1">format</label>
+                                <select class="form-select" id="tryFormat">
+                                    {% for fmt in image_formats %}
+                                    <option value="{{ fmt }}">{{ fmt }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="api-code-wrap">
+                            <pre class="api-code"><code id="tryUrl"></code></pre>
+                            {{ copy_button('tryUrl', 'Copy URL') }}
+                        </div>
+
+                        <div class="preview-container mb-0">
+                            <img id="tryPreview" class="api-try-image" alt="Barcode returned by the request above">
+                            <div id="tryError" class="api-try-error d-none" role="alert"></div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-2">
+                            <a id="tryOpen" class="small" href="#" target="_blank" rel="noopener">
+                                Open image <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Responses -->
+            <div class="col-xl-5">
+                <div class="card h-100 mb-0">
+                    <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-reply me-2" aria-hidden="true"></i>Responses</h3></div>
+                    <div class="card-body">
+                        <h4 class="option-group-title">JSON <span class="api-chip">default</span></h4>
+<pre class="api-code">{
+  <span class="tok-key">"barcode"</span>: <span class="tok-str">"data:image/png;base64,iVBOR…"</span>,
+  <span class="tok-key">"barcode_type"</span>: <span class="tok-str">"code128"</span>,
+  <span class="tok-key">"data"</span>: <span class="tok-str">"test"</span>,
+  <span class="tok-key">"encoded"</span>: <span class="tok-str">"test"</span>, <span class="tok-comment">// with any check digits added</span>
+  <span class="tok-key">"generated_at"</span>: <span class="tok-str">"2026-01-01T12:00:00+00:00"</span>,
+  <span class="tok-key">"options"</span>: { <span class="tok-comment">… settings used …</span> }
+}</pre>
+
+                        <h4 class="option-group-title mt-4">Image <span class="api-chip">raw=true</span></h4>
+                        <p class="small text-muted">
+                            The image bytes, served inline with the matching content type
+                            (<code>image/png</code>, <code>image/jpeg</code>, …).
+                        </p>
+
+                        <h4 class="option-group-title mt-4">Errors <span class="api-chip api-chip-error">400 / 500</span></h4>
+<pre class="api-code mb-0">{
+  <span class="tok-key">"error"</span>: <span class="tok-str">"Missing required parameter: data"</span>,
+  <span class="tok-key">"status"</span>: <span class="tok-str">"error"</span>,
+  <span class="tok-key">"status_code"</span>: <span class="tok-num">400</span>
+}</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code examples -->
+        <div class="card mt-4">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <h3 class="h5 mb-0"><i class="bi bi-code-slash me-2" aria-hidden="true"></i>Code examples</h3>
+                <span class="small text-muted">Follows the values in <em>Try it</em></span>
+            </div>
+            <div class="card-body">{{ code_tabs('barcodeCode') }}</div>
+        </div>
+
+        <!-- Parameters -->
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-sliders2 me-2" aria-hidden="true"></i>Query parameters</h3></div>
+            <div class="card-body">{{ param_table(barcode_params) }}</div>
+        </div>
+
+        <!-- Barcode types -->
+        <div class="card" id="barcode-types">
+            <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-upc me-2" aria-hidden="true"></i>Barcode types</h3></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table param-table mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col"><code>type</code></th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Data</th>
+                                <th scope="col">Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, spec in barcode_types.items() %}
+                            <tr>
+                                <td><code class="param-name">{{ key }}</code></td>
+                                <td class="text-nowrap">{{ spec.label }}</td>
+                                <td class="param-allowed">{{ spec.requirements }}</td>
+                                <td class="text-nowrap">
+                                    <button type="button" class="btn btn-link btn-sm p-0 api-try-example" data-type="{{ key }}"
+                                            title="Load into Try it"><code>{{ spec.example }}</code> <i class="bi bi-arrow-up-circle" aria-hidden="true"></i></button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted mt-3 mb-0">
+                    Also accepted:
+                    {% for alias, target in barcode_aliases.items() -%}
+                        <code>{{ alias }}</code> for <code>{{ target }}</code>{{ ', ' if not loop.last else '.' }}
+                    {% endfor %}
+                </p>
+            </div>
+        </div>
+
+        <!-- Other endpoints -->
+        <div class="card mb-0">
+            <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-signpost-split me-2" aria-hidden="true"></i>Other endpoints</h3></div>
+            <div class="card-body">
+                <div class="endpoint">
+                    <span class="method">GET</span>
+                    <code class="path">/api/barcode/writer-options</code>
+                    <span class="desc">Default writer options and supported image formats</span>
+                    <a href="{{ url_for('api.barcode.list_all_writer_options') }}" class="btn btn-sm btn-outline-secondary" target="_blank" rel="noopener">
+                        View JSON <i class="bi bi-box-arrow-up-right ms-1" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===================================================== Image grid -->
+    <section id="imagegrid" class="api-section">
+        <div class="api-section-head">
+            <h2 class="h4 mb-0"><i class="bi bi-grid-3x3 me-2" aria-hidden="true"></i>Image grid</h2>
+            <a href="{{ url_for('pages.image_grid') }}" class="small">Open image grid <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Request -->
+            <div class="col-xl-7">
+                <div class="card h-100 mb-0">
+                    <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-send me-2" aria-hidden="true"></i>Request</h3></div>
+                    <div class="card-body">
+                        <div class="endpoint mb-3">
+                            <span class="method">POST</span>
+                            <code class="path">/api/imagegrid/generate</code>
+                            <span class="desc"><code>multipart/form-data</code></span>
+                        </div>
+                        <p class="small text-muted mb-0">
+                            Upload images as repeated <code>images</code> fields. They are laid out in the
+                            smallest square grid that fits them, so 5 images make a 3&times;3 grid.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response + limits -->
+            <div class="col-xl-5">
+                <div class="card h-100 mb-0">
+                    <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-reply me-2" aria-hidden="true"></i>Response</h3></div>
+                    <div class="card-body">
+                        <h4 class="option-group-title">Image <span class="api-chip">200</span></h4>
+                        <p class="small text-muted">The finished grid as a PNG (<code>image/png</code>).</p>
+
+                        <h4 class="option-group-title mt-4">Limits</h4>
+                        <ul class="api-limits">
+                            <li><span>Request body</span><strong>{{ max_upload_mb }} MB</strong></li>
+                            <li><span>Output size</span><strong>{{ '{:,}'.format(max_output_pixels) }} px</strong></li>
+                        </ul>
+
+                        <h4 class="option-group-title mt-4">Errors <span class="api-chip api-chip-error">400 / 413 / 500</span></h4>
+                        <p class="small text-muted mb-0">
+                            Same JSON shape as the barcode API. <code>413</code> means the upload is
+                            over the request body limit.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code examples -->
+        {% set grid_url = request.url_root.rstrip('/') ~ url_for('api.imagegrid.generate_grid') %}
+        {% set grid_snippets = {
+            'curl': 'curl -X POST ' ~ grid_url ~ ' \\
+  -F "images=@first.jpg" \\
+  -F "images=@second.png" \\
+  -F "size=256" \\
+  -F "gap=8" \\
+  -F "use_gradient=true" \\
+  -F "gradient_direction=diagonal" \\
+  -o grid.png',
+            'cmd': 'curl -X POST ' ~ grid_url ~ ' ^
+  -F "images=@first.jpg" ^
+  -F "images=@second.png" ^
+  -F "size=256" ^
+  -F "gap=8" ^
+  -F "use_gradient=true" ^
+  -F "gradient_direction=diagonal" ^
+  -o grid.png',
+            'powershell': '# PowerShell 7+ (-Form is not available in Windows PowerShell 5.1)
+$form = @{
+    images             = Get-Item first.jpg, second.png
+    size               = 256
+    gap                = 8
+    use_gradient       = "true"
+    gradient_direction = "diagonal"
+}
+Invoke-WebRequest -Method Post -Uri "' ~ grid_url ~ '" -Form $form -OutFile grid.png',
+            'python': '# pip install requests
+import requests
+
+with open("first.jpg", "rb") as first, open("second.png", "rb") as second:
+    response = requests.post(
+        "' ~ grid_url ~ '",
+        files=[("images", first), ("images", second)],
+        data={"size": 256, "gap": 8, "use_gradient": "true", "gradient_direction": "diagonal"},
+        timeout=60,
+    )
+response.raise_for_status()
+
+with open("grid.png", "wb") as f:
+    f.write(response.content)',
+            'javascript': '// Browser: send the files picked in an <input type="file" multiple>
+const form = new FormData();
+for (const file of document.querySelector("input[type=file]").files) {
+  form.append("images", file);
+}
+form.append("size", "256");
+form.append("gap", "8");
+form.append("use_gradient", "true");
+form.append("gradient_direction", "diagonal");
+
+const response = await fetch("' ~ grid_url ~ '", { method: "POST", body: form });
+if (!response.ok) throw new Error((await response.json()).error);
+
+const img = document.createElement("img");
+img.src = URL.createObjectURL(await response.blob());
+document.body.append(img);',
+            'node': '// Node.js 20+
+import { openAsBlob } from "node:fs";
+import { writeFile } from "node:fs/promises";
+
+const form = new FormData();
+form.append("images", await openAsBlob("first.jpg"), "first.jpg");
+form.append("images", await openAsBlob("second.png"), "second.png");
+form.append("size", "256");
+form.append("gap", "8");
+form.append("use_gradient", "true");
+form.append("gradient_direction", "diagonal");
+
+const response = await fetch("' ~ grid_url ~ '", { method: "POST", body: form });
+if (!response.ok) throw new Error((await response.json()).error);
+await writeFile("grid.png", Buffer.from(await response.arrayBuffer()));',
+        } %}
+        <div class="card mt-4">
+            <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-code-slash me-2" aria-hidden="true"></i>Code examples</h3></div>
+            <div class="card-body">{{ code_tabs('gridCode', grid_snippets) }}</div>
+        </div>
+
+        <!-- Parameters -->
+        <div class="card mt-4 mb-0">
+            <div class="card-header"><h3 class="h5 mb-0"><i class="bi bi-sliders2 me-2" aria-hidden="true"></i>Form fields</h3></div>
+            <div class="card-body">{{ param_table(imagegrid_params) }}</div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+  const BARCODE_TYPES = {{ barcode_types | tojson }};
+  const typeSelect = document.getElementById('tryType');
+  const dataInput = document.getElementById('tryData');
+  const formatSelect = document.getElementById('tryFormat');
+  const urlEl = document.getElementById('tryUrl');
+  const preview = document.getElementById('tryPreview');
+  const openLink = document.getElementById('tryOpen');
+  let timer;
+
+  const BARCODE_ENDPOINT = new URL("{{ url_for('api.barcode.generate_barcode') }}", window.location.origin).toString();
+
+  function currentParams() {
+    const params = { data: dataInput.value || BARCODE_TYPES[typeSelect.value].example, raw: 'true' };
+    if (typeSelect.value !== 'code128') params.type = typeSelect.value;
+    if (formatSelect.value !== 'PNG') params.format = formatSelect.value;
+    return params;
+  }
+
+  function buildUrl(params) {
+    const url = new URL(BARCODE_ENDPOINT);
+    Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+    return url.toString();
+  }
+
+  // Barcode code samples, rebuilt from the Try it values. JSON.stringify gives
+  // string literals that are valid in both Python and JavaScript.
+  function barcodeSnippets(params) {
+    const url = buildUrl(params);
+    const file = `barcode.${(params.format || 'PNG').toLowerCase()}`;
+    const q = JSON.stringify;
+    const pyParams = Object.entries(params).map(([k, v]) => `${q(k)}: ${q(v)}`).join(', ');
+    const jsParams = Object.entries(params).map(([k, v]) => `${k}: ${q(v)}`).join(', ');
+    return {
+      curl: `curl -o ${file} "${url}"`,
+      cmd: `curl -o ${file} "${url}"`,
+      powershell: `Invoke-WebRequest -Uri "${url}" -OutFile ${file}`,
+      python: [
+        '# pip install requests',
+        'import requests',
+        '',
+        'response = requests.get(',
+        `    ${q(BARCODE_ENDPOINT)},`,
+        `    params={${pyParams}},`,
+        '    timeout=10,',
+        ')',
+        'response.raise_for_status()',
+        '',
+        `with open(${q(file)}, "wb") as f:`,
+        '    f.write(response.content)',
+      ].join('\n'),
+      javascript: [
+        '// Browser',
+        `const params = new URLSearchParams({ ${jsParams} });`,
+        `const response = await fetch(\`${BARCODE_ENDPOINT}?\${params}\`);`,
+        'if (!response.ok) throw new Error((await response.json()).error);',
+        '',
+        'const img = document.createElement("img");',
+        'img.src = URL.createObjectURL(await response.blob());',
+        'document.body.append(img);',
+      ].join('\n'),
+      node: [
+        '// Node.js 18+',
+        'import { writeFile } from "node:fs/promises";',
+        '',
+        `const params = new URLSearchParams({ ${jsParams} });`,
+        `const response = await fetch(\`${BARCODE_ENDPOINT}?\${params}\`);`,
+        'if (!response.ok) throw new Error((await response.json()).error);',
+        `await writeFile(${q(file)}, Buffer.from(await response.arrayBuffer()));`,
+      ].join('\n'),
+    };
+  }
+
+  function update() {
+    const params = currentParams();
+    const url = buildUrl(params);
+    urlEl.textContent = url;
+    openLink.href = url;
+    Object.entries(barcodeSnippets(params)).forEach(([lang, code]) => {
+      document.getElementById(`barcodeCode-${lang}-code`).textContent = code;
+    });
+    // Debounced so typing does not fire a request per keystroke.
+    clearTimeout(timer);
+    timer = setTimeout(() => loadPreview(url), 250);
+  }
+
+  // Changing type loads its sample data unless the user typed their own.
+  let lastType = typeSelect.value;
+  typeSelect.addEventListener('change', () => {
+    if (!dataInput.value.trim() || dataInput.value === BARCODE_TYPES[lastType].example
+        || dataInput.value === 'test') {
+      dataInput.value = BARCODE_TYPES[typeSelect.value].example;
+    }
+    lastType = typeSelect.value;
+    update();
+  });
+  document.querySelectorAll('.api-try-example').forEach(btn => {
+    btn.addEventListener('click', () => {
+      typeSelect.value = lastType = btn.dataset.type;
+      dataInput.value = BARCODE_TYPES[btn.dataset.type].example;
+      update();
+      document.getElementById('barcode').scrollIntoView();
+    });
+  });
+  // Fetched rather than set as <img src> so a 400 shows the API's message
+  // instead of a broken image.
+  const tryError = document.getElementById('tryError');
+  async function loadPreview(url) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || `HTTP ${res.status}`);
+      if (preview.src.startsWith('blob:')) URL.revokeObjectURL(preview.src);
+      preview.src = URL.createObjectURL(await res.blob());
+      preview.classList.remove('d-none');
+      tryError.classList.add('d-none');
+    } catch (err) {
+      preview.classList.add('d-none');
+      tryError.textContent = err.message;
+      tryError.classList.remove('d-none');
+    }
+  }
+
+  dataInput.addEventListener('input', update);
+  formatSelect.addEventListener('change', update);
+
+  // Copy buttons name the element whose text they copy in data-copy.
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const text = document.getElementById(btn.dataset.copy).textContent;
+      navigator.clipboard.writeText(text)
+        .then(() => showToast('Copied to clipboard'))
+        .catch(() => showToast('Failed to copy', true));
+    });
+  });
+
+  // Keep every code tab group on the same language, remembered per browser.
+  const LANG_KEY = 'api-code-lang';
+  function showLanguage(lang) {
+    document.querySelectorAll(`[data-code-tabs] [data-lang="${lang}"]`).forEach(btn => {
+      if (!btn.classList.contains('active')) bootstrap.Tab.getOrCreateInstance(btn).show();
+    });
+  }
+  document.querySelectorAll('[data-code-tabs] [data-lang]').forEach(btn => {
+    btn.addEventListener('shown.bs.tab', () => {
+      showLanguage(btn.dataset.lang);
+      try { localStorage.setItem(LANG_KEY, btn.dataset.lang); } catch (e) { /* storage unavailable */ }
+    });
+  });
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved) showLanguage(saved);
+  } catch (e) { /* storage unavailable */ }
+
+  update();
+})();
+</script>
+{% endblock %}

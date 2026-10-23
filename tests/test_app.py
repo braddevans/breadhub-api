@@ -28,7 +28,7 @@ def test_create_app_can_be_called_repeatedly():
     assert '/api/imagegrid/generate' in rules[0]
 
 
-@pytest.mark.parametrize('path', ['/', '/generator', '/imagegrid'])
+@pytest.mark.parametrize('path', ['/', '/generator', '/imagegrid', '/docs'])
 def test_pages_render(app, path):
     assert app.test_client().get(path).status_code == 200
 

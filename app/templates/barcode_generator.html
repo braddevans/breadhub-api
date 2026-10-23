@@ -21,12 +21,26 @@
         <div class="col-lg-8">
             <div class="card barcode-card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Code 128 Barcode</h5>
+                    <h5 class="mb-0">Barcode</h5>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label for="barcodeData" class="form-label">Data (any text)</label>
-                        <input type="text" class="form-control" id="barcodeData" value="CODE128" autocomplete="off" />
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label for="barcodeType" class="form-label">Type</label>
+                            <select class="form-select" id="barcodeType">
+                                {% for key, spec in barcode_types.items() %}
+                                <option value="{{ key }}">{{ spec.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <label for="barcodeData" class="form-label">Data</label>
+                            <input type="text" class="form-control" id="barcodeData" value="{{ barcode_types['code128'].example }}"
+                                   autocomplete="off" aria-describedby="barcodeDataHint" />
+                        </div>
+                        <div class="col-12">
+                            <div id="barcodeDataHint" class="form-text mt-0"><i class="bi bi-info-circle me-1" aria-hidden="true"></i><span></span></div>
+                        </div>
                     </div>
                     <button class="btn btn-primary" id="btnGenerate">Generate</button>
                 </div>
@@ -46,7 +60,7 @@
                 <div class="card-body text-center">
                     <div class="preview-container" id="barcodePreviewContainer">
                         <div id="barcodePlaceholder">
-                            <i class="bi bi-upc-scan" style="font-size:3rem;"></i>
+                            <i class="bi bi-upc-scan" aria-hidden="true"></i>
                             <div class="placeholder-text">Your barcode will appear here</div>
                         </div>
                         <img id="barcodePreview" alt="Generated barcode (click to copy image)" title="Click to copy image" />
@@ -175,7 +189,11 @@
 
   // API query parameter -> id of the control that sets it. Shared links use
   // the parameter names, so this map is what lets a link restore the form.
+  // Labels, input requirements and sample data per type, from barcode.py.
+  const BARCODE_TYPES = {{ barcode_types | tojson }};
+
   const PARAM_IDS = {
+    type: 'barcodeType',
     write_text: 'writeText',
     center_text: 'centerText',
     module_width: 'moduleWidth',
@@ -215,6 +233,15 @@
     $('#textOptions').disabled = !$('#writeText').checked;
   }
 
+  // Also records the type it was called for, which the type <select> uses to
+  // tell whether the data box still holds the previous type's sample.
+  function updateTypeHint() {
+    state.lastType = $('#barcodeType').value;
+    const spec = BARCODE_TYPES[state.lastType];
+    $('#barcodeDataHint span').textContent = spec.requirements;
+    $('#barcodeData').placeholder = spec.example;
+  }
+
   function setDefaultsFor() {
     $('#moduleWidth').value = '0.2';
     $('#moduleHeight').value = '15';
@@ -252,18 +279,19 @@
     img.style.display = 'none';
 
     const opts = gatherOptions();
-    const params = new URLSearchParams({ data, type: 'code128', ...opts });
+    const params = new URLSearchParams({ data, ...opts });
 
     try {
       const res = await fetch(`/api/barcode?${params.toString()}`);
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData?.message || 'Failed to generate barcode');
+        throw new Error(errorData?.error || 'Failed to generate barcode');
       }
       const result = await res.json();
       img.src = result.barcode;
-      img.alt = `Barcode: ${result.barcode_type?.toUpperCase() || 'CODE128'} - ${result.data}`;
-      $('#barcodeDataDisplay').textContent = `Type: ${result.barcode_type?.toUpperCase() || 'CODE128'}, Data: ${result.data}`;
+      const label = BARCODE_TYPES[result.barcode_type]?.label || result.barcode_type;
+      img.alt = `${label} barcode: ${result.encoded}`;
+      $('#barcodeDataDisplay').textContent = `${label} · Encoded: ${result.encoded}`;
       previewContainer.classList.add('has-barcode');
       img.style.display = 'block';
 
@@ -272,7 +300,7 @@
       state.currentBarcode = { type: result.barcode_type || 'code128', data: result.data, imageData: result.barcode, params: opts, settings: result.options || opts };
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Error generating barcode');
+      showToast(err.message || 'Error generating barcode', true);
     }
   }
 
@@ -337,12 +365,13 @@
 
   async function hydrateFromURL() {
     const params = new URLSearchParams(window.location.search);
-    const data = params.get('data') || 'CODE128';
+    const data = params.get('data') || BARCODE_TYPES.code128.example;
     setDefaultsFor();
     $('#barcodeData').value = data;
 
     params.forEach((value, key) => applyParam(key, value));
     syncControls();
+    updateTypeHint();
 
     await generateBarcode();
   }
@@ -366,6 +395,19 @@
 
     $('#btnGenerate').addEventListener('click', generateBarcode);
 
+    // Switching type swaps in that type's sample data, unless the user has
+    // typed their own value, so the new type renders straight away.
+    $('#barcodeType').addEventListener('change', () => {
+      const dataInput = $('#barcodeData');
+      const previousExample = BARCODE_TYPES[state.lastType]?.example;
+      if (!dataInput.value.trim() || dataInput.value === previousExample) {
+        dataInput.value = BARCODE_TYPES[$('#barcodeType').value].example;
+      }
+      updateTypeHint();
+      generateBarcode();
+    });
+    $('#barcodeData').addEventListener('keydown', (e) => { if (e.key === 'Enter') generateBarcode(); });
+
     $('#barcodePreview').addEventListener('click', copyImage);
     $('#copyBarcodeBtn').addEventListener('click', copyImage);
     $('#copyRawUrlBtn').addEventListener('click', copyRawUrl);
@@ -375,7 +417,9 @@
     $('#btnReset').addEventListener('click', async () => {
       history.replaceState({}, '', window.location.pathname);
       setDefaultsFor();
-      $('#barcodeData').value = 'CODE128';
+      $('#barcodeType').value = 'code128';
+      $('#barcodeData').value = BARCODE_TYPES.code128.example;
+      updateTypeHint();
       $('#writeText').checked = true;
       $('#centerText').checked = true;
       $('#foregroundColor').value = '#000000';

@@ -12,6 +12,8 @@ from . import BaseRoute
 # request can ask Pillow for a multi-gigapixel canvas.
 SIZE_LIMITS = (16, 2048)
 GAP_LIMITS = (0, 512)
+DEFAULT_SIZE = 512
+DEFAULT_GAP = 10
 MAX_IMAGES = 100
 MAX_OUTPUT_PIXELS = 50_000_000
 
@@ -21,8 +23,22 @@ MAX_INPUT_PIXELS = 40_000_000
 
 GRADIENT_DIRECTIONS = {'horizontal', 'vertical', 'diagonal'}
 
+DEFAULT_BG_COLOR = '#ffffff'
+DEFAULT_GRADIENT = ('#ffffff', '#000000', 'horizontal')
+
 # Resolution the gradient is interpolated at before being upscaled.
 GRADIENT_STEPS = 256
+
+
+def render_page():
+    """Render the image grid UI with its inputs bounded by the API's own limits."""
+    return render_template(
+        'imagegrid.html',
+        size_limits=SIZE_LIMITS,
+        gap_limits=GAP_LIMITS,
+        default_size=DEFAULT_SIZE,
+        default_gap=DEFAULT_GAP,
+    )
 
 
 class ImageGridAPI(BaseRoute):
@@ -162,7 +178,7 @@ class ImageGridAPI(BaseRoute):
 
     def imagegrid_page(self):
         """Serve the image grid generator HTML page."""
-        return render_template('imagegrid.html')
+        return render_page()
 
     @staticmethod
     def _bounded_int(name, raw, default, limits):
@@ -184,13 +200,14 @@ class ImageGridAPI(BaseRoute):
         """Generate an image grid from uploaded files."""
         try:
             # Get form data
-            gap = self._bounded_int('gap', request.form.get('gap'), 10, GAP_LIMITS)
-            size = self._bounded_int('size', request.form.get('size'), 512, SIZE_LIMITS)
-            bg_color = request.form.get('bg_color', '#ffffff')
+            gap = self._bounded_int('gap', request.form.get('gap'), DEFAULT_GAP, GAP_LIMITS)
+            size = self._bounded_int('size', request.form.get('size'), DEFAULT_SIZE, SIZE_LIMITS)
+            bg_color = request.form.get('bg_color', DEFAULT_BG_COLOR)
             use_gradient = request.form.get('use_gradient') == 'true'
-            gradient_start = request.form.get('gradient_start', '#ffffff')
-            gradient_end = request.form.get('gradient_end', '#000000')
-            gradient_direction = request.form.get('gradient_direction', 'horizontal').strip().lower()
+            default_start, default_end, default_direction = DEFAULT_GRADIENT
+            gradient_start = request.form.get('gradient_start', default_start)
+            gradient_end = request.form.get('gradient_end', default_end)
+            gradient_direction = request.form.get('gradient_direction', default_direction).strip().lower()
 
             # Parse background color
             if use_gradient:
@@ -280,3 +297,30 @@ class ImageGridAPI(BaseRoute):
 def create_blueprint():
     """Entry point used by app.routes.init_app to register this module."""
     return ImageGridAPI.create()
+
+
+# Multipart form fields of POST /api/imagegrid/generate, grouped for the API
+# reference page. Defaults and ranges come from the constants above.
+PARAMETER_GROUPS = [
+    ('Images', [
+        {'name': 'images', 'type': 'file', 'required': True, 'default': None,
+         'allowed': f'Up to {MAX_IMAGES}, each up to {MAX_INPUT_PIXELS:,} pixels',
+         'description': 'Repeat the field once per image. Images fill the grid left to right, top to bottom.'},
+        {'name': 'size', 'type': 'integer', 'default': str(DEFAULT_SIZE),
+         'allowed': f'{SIZE_LIMITS[0]}\u2013{SIZE_LIMITS[1]} px', 'description': 'Each image is resized to this square.'},
+        {'name': 'gap', 'type': 'integer', 'default': str(DEFAULT_GAP),
+         'allowed': f'{GAP_LIMITS[0]}\u2013{GAP_LIMITS[1]} px', 'description': 'Space between images.'},
+    ]),
+    ('Background', [
+        {'name': 'bg_color', 'type': 'colour', 'default': DEFAULT_BG_COLOR,
+         'allowed': 'Hex (#fff, #ffffff) or R,G,B', 'description': 'Solid background colour.'},
+        {'name': 'use_gradient', 'type': 'boolean', 'default': 'false', 'allowed': 'true, false',
+         'description': 'Use a gradient instead of bg_color.'},
+        {'name': 'gradient_start', 'type': 'colour', 'default': DEFAULT_GRADIENT[0],
+         'allowed': 'Hex or R,G,B', 'description': 'Gradient start colour.'},
+        {'name': 'gradient_end', 'type': 'colour', 'default': DEFAULT_GRADIENT[1],
+         'allowed': 'Hex or R,G,B', 'description': 'Gradient end colour.'},
+        {'name': 'gradient_direction', 'type': 'string', 'default': DEFAULT_GRADIENT[2],
+         'allowed': ', '.join(sorted(GRADIENT_DIRECTIONS)), 'description': 'Direction the gradient runs.'},
+    ]),
+]
