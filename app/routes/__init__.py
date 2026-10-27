@@ -1,8 +1,10 @@
 import importlib
 import pkgutil
-from flask import Blueprint
-from loguru import logger
 from typing import Self
+
+from flask import Blueprint
+
+from app.logging_config import logger
 
 
 class BaseRoute:

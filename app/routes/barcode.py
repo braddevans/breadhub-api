@@ -20,6 +20,10 @@ from . import BaseRoute
 APP_ROOT = Path(__file__).resolve().parent.parent
 FONTS_DIR = APP_ROOT / 'fonts'
 
+# Bundled font files by lowercased name. Font family names are lowercased to
+# build the filename, but some files are capitalised (Lato.ttf, Barlow.ttf).
+FONT_FILES = {f.name.lower(): f for f in FONTS_DIR.glob('*.ttf')}
+
 # Symbologies the API accepts, in the order the UI lists them. Each entry
 # drives validation, the generator's type picker and the API reference page.
 BARCODE_TYPES = {
@@ -103,7 +107,7 @@ DEFAULT_FONT_FAMILY = 'Typo Round Bold'
 
 # Font family names the API accepts, derived from the bundled .ttf files
 # ('typo-round-bold.ttf' -> 'Typo Round Bold').
-FONT_FAMILIES = sorted(f.stem.replace('-', ' ').title() for f in FONTS_DIR.glob('*.ttf'))
+FONT_FAMILIES = sorted(f.stem.replace('-', ' ').title() for f in FONT_FILES.values())
 
 # Image formats the writer may emit, mapped to the mimetype used to serve them.
 IMAGE_FORMAT_MIMETYPES = {
@@ -175,13 +179,7 @@ class BarcodeAPI(BaseRoute):
         if candidate.is_file():
             return str(candidate)
 
-        # Font family names are lowercased to build the filename, but some
-        # bundled files are capitalised (Lato.ttf, Barlow.ttf), so fall back to
-        # a case-insensitive match before giving up.
-        match = next(
-            (f for f in FONTS_DIR.glob('*') if f.name.lower() == candidate.name.lower()),
-            None
-        )
+        match = FONT_FILES.get(candidate.name.lower())
         if match is not None:
             return str(match)
 
@@ -478,7 +476,6 @@ class BarcodeAPI(BaseRoute):
 
     @staticmethod
     def _create_json_response(buffer, data, barcode_type, encoded, writer_options=None, mimetype='image/png'):
-        buffer.seek(0)
         base64_encoded = base64.b64encode(buffer.getvalue()).decode('utf-8')
         serializable_options = {}
         if writer_options:

@@ -13,6 +13,8 @@ services:
       # Worker/thread counts default to the values in gunicorn.conf.py
       # - GUNICORN_WORKERS=4
       # - GUNICORN_THREADS=4
+      # Threads per worker that decode image grid uploads (default: min(4, CPUs))
+      # - IMAGEGRID_THREADS=4
     volumes:
       # For Windows, use the full path for the volume
       - ${PWD}:/app

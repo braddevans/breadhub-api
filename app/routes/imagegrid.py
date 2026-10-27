@@ -1,6 +1,10 @@
 import io
+import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 from PIL import Image, UnidentifiedImageError
-from flask import request, send_file, render_template
+from flask import current_app, request, send_file, render_template
 from werkzeug.exceptions import HTTPException
 
 from app.logging_config import logger
@@ -28,6 +32,41 @@ DEFAULT_GRADIENT = ('#ffffff', '#000000', 'horizontal')
 
 # Resolution the gradient is interpolated at before being upscaled.
 GRADIENT_STEPS = 256
+
+# Uploads are decoded and resized on a pool shared by every request in this
+# process; Pillow releases the GIL for both, so they run in parallel. The pool
+# is created on first use rather than at import: under gunicorn's preload_app
+# the module is imported in the master, and threads do not survive the fork.
+_pool = None
+_pool_lock = threading.Lock()
+
+
+def _get_pool():
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            _pool = ThreadPoolExecutor(
+                max_workers=current_app.config['IMAGEGRID_THREADS'],
+                thread_name_prefix='imagegrid',
+            )
+        return _pool
+
+
+def _reset_pool():
+    # A child inherits the parent's executor object but none of its threads.
+    global _pool, _pool_lock
+    _pool, _pool_lock = None, threading.Lock()
+
+
+os.register_at_fork(after_in_child=_reset_pool)
+
+
+def _check_direction(direction):
+    if direction not in GRADIENT_DIRECTIONS:
+        raise ValueError(
+            f"Unknown gradient_direction: {direction}. "
+            f"Supported: {', '.join(sorted(GRADIENT_DIRECTIONS))}"
+        )
 
 
 def render_page():
@@ -115,11 +154,7 @@ class ImageGridAPI(BaseRoute):
         same, but a full-size diagonal gradient drops from seconds of CPU to
         milliseconds.
         """
-        if direction not in GRADIENT_DIRECTIONS:
-            raise ValueError(
-                f"Unknown gradient_direction: {direction}. "
-                f"Supported: {', '.join(sorted(GRADIENT_DIRECTIONS))}"
-            )
+        _check_direction(direction)
 
         steps = GRADIENT_STEPS
         span = steps - 1
@@ -196,6 +231,26 @@ class ImageGridAPI(BaseRoute):
             raise ValueError(f"{name} must be between {low} and {high}, got {value}")
         return value
 
+    @staticmethod
+    def _load_image(file, size):
+        """Decode an uploaded file and resize it to a size x size RGB image."""
+        try:
+            img = Image.open(file.stream)
+        except UnidentifiedImageError:
+            raise ValueError(f"{file.filename} is not a readable image")
+
+        with img:
+            # Image.open only reads the header, so the dimensions can be
+            # vetted before committing memory to a full decode.
+            if img.size[0] * img.size[1] > MAX_INPUT_PIXELS:
+                raise ValueError(
+                    f"{file.filename} is too large "
+                    f"({img.size[0]}x{img.size[1]}, max {MAX_INPUT_PIXELS:,} pixels)"
+                )
+
+            rgb = img if img.mode == 'RGB' else img.convert('RGB')
+            return rgb.resize((size, size), Image.Resampling.LANCZOS)
+
     def generate_grid(self):
         """Generate an image grid from uploaded files."""
         try:
@@ -211,11 +266,7 @@ class ImageGridAPI(BaseRoute):
 
             # Parse background color
             if use_gradient:
-                if gradient_direction not in GRADIENT_DIRECTIONS:
-                    raise ValueError(
-                        f"Unknown gradient_direction: {gradient_direction}. "
-                        f"Supported: {', '.join(sorted(GRADIENT_DIRECTIONS))}"
-                    )
+                _check_direction(gradient_direction)
                 start_color = self.parse_color(gradient_start)
                 end_color = self.parse_color(gradient_end)
                 gradient = (start_color, end_color, gradient_direction)
@@ -246,29 +297,10 @@ class ImageGridAPI(BaseRoute):
                     400
                 )
 
-            # Process images
-            resized_images = []
-            for file in named_files:
-                try:
-                    img = Image.open(file.stream)
-                except UnidentifiedImageError:
-                    raise ValueError(f"{file.filename} is not a readable image")
-
-                # Image.open only reads the header, so the dimensions can be
-                # vetted before committing memory to a full decode.
-                if img.size[0] * img.size[1] > MAX_INPUT_PIXELS:
-                    raise ValueError(
-                        f"{file.filename} is too large "
-                        f"({img.size[0]}x{img.size[1]}, max {MAX_INPUT_PIXELS:,} pixels)"
-                    )
-
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
-                resized = img.resize((size, size), Image.Resampling.LANCZOS)
-                resized_images.append(resized)
-
-            if not resized_images:
-                return error_response('No valid images processed', 400)
+            # pool.map yields in upload order and re-raises the first failure.
+            resized_images = list(_get_pool().map(
+                lambda file: self._load_image(file, size), named_files
+            ))
 
             # Create grid
             grid = self.create_grid(resized_images, gap, background_color, gradient)

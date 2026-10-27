@@ -63,3 +63,36 @@ def test_concurrent_requests(app):
         results = list(pool.map(barcode, range(32))) + list(pool.map(grid, range(16)))
 
     assert all(result == (200, b'\x89PNG') for result in results)
+
+
+def _post_grid(app, images, **form):
+    return app.test_client().post(
+        '/api/imagegrid/generate',
+        data={'size': '16', 'gap': '0', **form, 'images': images},
+        content_type='multipart/form-data',
+    )
+
+
+def test_grid_keeps_upload_order(app):
+    """Uploads are resized in parallel but placed in the order they were sent."""
+    colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0)]
+    images = [(io.BytesIO(_png_bytes(c)), f'{i}.png') for i, c in enumerate(colors)]
+
+    response = _post_grid(app, images)
+
+    assert response.status_code == 200
+    grid = Image.open(io.BytesIO(response.data))
+    corners = [grid.getpixel((x, y)) for y in (0, 16) for x in (0, 16)]
+    assert corners == colors
+
+
+def test_grid_rejects_unreadable_upload(app):
+    images = [
+        (io.BytesIO(_png_bytes((0, 0, 0))), 'ok.png'),
+        (io.BytesIO(b'not an image'), 'bad.png'),
+    ]
+
+    response = _post_grid(app, images)
+
+    assert response.status_code == 400
+    assert 'bad.png is not a readable image' in response.get_json()['error']
